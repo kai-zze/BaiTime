@@ -29,6 +29,37 @@ export class RoomSyncService {
     }
   }
 
+  public async fetchPersistedRoomState(): Promise<any | null> {
+    if (!isSupabaseConfigured || !supabase) return null;
+    try {
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('state')
+        .eq('code', this.roomCode)
+        .maybeSingle();
+
+      if (!error && data && data.state) {
+        return data.state;
+      }
+    } catch {
+      // Fallback if table is not created yet
+    }
+    return null;
+  }
+
+  public async persistRoomState(state: any) {
+    if (!isSupabaseConfigured || !supabase) return;
+    try {
+      await supabase.from('rooms').upsert({
+        code: this.roomCode,
+        state: state,
+        updated_at: new Date().toISOString(),
+      });
+    } catch {
+      // Ignore if database table is not created yet
+    }
+  }
+
   public subscribe(
     onStateUpdate: (state: any) => void,
     onChatMessage: (msg: any) => void,
@@ -36,6 +67,13 @@ export class RoomSyncService {
     onRequestState?: () => void
   ) {
     if (isSupabaseConfigured && supabase) {
+      // Fetch persisted state from Postgres DB immediately upon subscribing
+      this.fetchPersistedRoomState().then((persistedState) => {
+        if (persistedState) {
+          onStateUpdate(persistedState);
+        }
+      });
+
       this.channel = supabase.channel(`room:${this.roomCode}`, {
         config: { broadcast: { self: false } },
       });
@@ -53,6 +91,15 @@ export class RoomSyncService {
         .on('broadcast', { event: 'request-state' }, () => {
           if (onRequestState) onRequestState();
         })
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'rooms', filter: `code=eq.${this.roomCode}` },
+          (payload: any) => {
+            if (payload.new && payload.new.state) {
+              onStateUpdate(payload.new.state);
+            }
+          }
+        )
         .subscribe((status) => {
           if (status === 'SUBSCRIBED' && this.channel) {
             this.channel.send({
@@ -77,6 +124,7 @@ export class RoomSyncService {
   }
 
   public broadcastState(state: any) {
+    this.persistRoomState(state);
     if (this.channel && isSupabaseConfigured) {
       this.channel.send({
         type: 'broadcast',
@@ -125,6 +173,7 @@ export class RoomSyncService {
   }
 
   public broadcastRequestState() {
+    this.fetchPersistedRoomState();
     if (this.channel && isSupabaseConfigured) {
       this.channel.send({
         type: 'broadcast',
