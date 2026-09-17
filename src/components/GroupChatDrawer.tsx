@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { ChatMessage, StageSignalType } from '../types/timer';
-import { MessageSquare, Send, X, Zap, Volume2, FastForward, Clock, Edit2, Check, Brain, CheckCircle2 } from 'lucide-react';
+import { MessageSquare, Send, X, Zap, Volume2, FastForward, Clock, Edit2, Check, Brain, CheckCircle2, Trash2 } from 'lucide-react';
 
 interface GroupChatDrawerProps {
   isOpen: boolean;
@@ -10,6 +10,8 @@ interface GroupChatDrawerProps {
   onUpdateUserName?: (name: string) => void;
   onSendMessage: (text: string) => void;
   onSendSignal?: (type: StageSignalType, messageText: string) => void;
+  isHost?: boolean;
+  onClearChat?: () => void;
 }
 
 export const GroupChatDrawer: React.FC<GroupChatDrawerProps> = ({
@@ -19,6 +21,8 @@ export const GroupChatDrawer: React.FC<GroupChatDrawerProps> = ({
   userName,
   onUpdateUserName,
   onSendMessage,
+  isHost,
+  onClearChat,
 }) => {
   const [inputText, setInputText] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
@@ -145,12 +149,30 @@ export const GroupChatDrawer: React.FC<GroupChatDrawerProps> = ({
               </div>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          
+          <div className="flex items-center gap-1.5">
+            {isHost && onClearChat && messages.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm("Are you sure you want to clear all chat messages for everyone in this room?")) {
+                    onClearChat();
+                  }
+                }}
+                className="p-1.5 text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 rounded-lg hover:bg-rose-500/10 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer"
+                title="Clear All Chat Messages (Host Only)"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span className="hidden xs:inline text-[11px]">Clear</span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1.5 text-gray-400 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
 

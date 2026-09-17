@@ -96,7 +96,8 @@ export class RoomSyncService {
     onStateUpdate: (state: any) => void,
     onChatMessage: (msg: any) => void,
     onStageSignal: (sig: any) => void,
-    onRequestState?: () => void
+    onRequestState?: () => void,
+    onClearChat?: () => void
   ) {
     if (isSupabaseConfigured && supabase) {
       // Fetch persisted state from Postgres DB immediately upon subscribing
@@ -119,6 +120,9 @@ export class RoomSyncService {
         })
         .on('broadcast', { event: 'stage-signal' }, ({ payload }) => {
           onStageSignal(payload);
+        })
+        .on('broadcast', { event: 'clear-chat' }, () => {
+          if (onClearChat) onClearChat();
         })
         .on('broadcast', { event: 'request-state' }, () => {
           if (onRequestState) onRequestState();
@@ -152,6 +156,7 @@ export class RoomSyncService {
         if (type === 'timer-state') onStateUpdate(payload);
         if (type === 'chat-message') onChatMessage(payload);
         if (type === 'stage-signal') onStageSignal(payload);
+        if (type === 'clear-chat' && onClearChat) onClearChat();
         if (type === 'request-state' && onRequestState) onRequestState();
       };
     }
@@ -184,6 +189,16 @@ export class RoomSyncService {
       this.localBroadcastChannel.postMessage({
         type: 'stage-signal',
         payload: signal,
+      });
+    }
+  }
+
+  public broadcastClearChat() {
+    this.sendOrQueue('clear-chat', {});
+    if (this.localBroadcastChannel) {
+      this.localBroadcastChannel.postMessage({
+        type: 'clear-chat',
+        payload: {},
       });
     }
   }

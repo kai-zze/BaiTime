@@ -21,6 +21,7 @@ import {
   FastForward,
   ClipboardList,
   CheckCircle2,
+  Trash2,
 } from 'lucide-react';
 
 interface MemberScreenProps {
@@ -35,6 +36,8 @@ interface MemberScreenProps {
   isDark?: boolean;
   onToggleTheme?: () => void;
   onOpenStageMode?: () => void;
+  isHost?: boolean;
+  onClearChat?: () => void;
 }
 
 export const MemberScreen: React.FC<MemberScreenProps> = ({
@@ -46,6 +49,8 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
   onSendSignal,
   isDark = true,
   onToggleTheme,
+  isHost,
+  onClearChat,
 }) => {
   const [inputText, setInputText] = useState('');
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
@@ -537,7 +542,24 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
                 Team Live Chat & Signal Log
               </h3>
             </div>
-            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">Live Sync</span>
+            <div className="flex items-center gap-2">
+              {isHost && onClearChat && messages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm("Are you sure you want to clear all chat messages for everyone in this room?")) {
+                      onClearChat();
+                    }
+                  }}
+                  className="p-1 text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 rounded hover:bg-rose-500/10 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer"
+                  title="Clear All Chat Messages (Host Only)"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span className="text-[10px]">Clear Chat</span>
+                </button>
+              )}
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">Live Sync</span>
+            </div>
           </div>
 
           {/* Messages Stream */}

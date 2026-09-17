@@ -75,6 +75,7 @@ export function App() {
     joinExistingRoom,
     sendChatMessage,
     sendStageSignal,
+    clearChatMessages,
   } = useTimerSync(initialRoom);
 
   // Modals state
@@ -258,6 +259,8 @@ export function App() {
           onPrevSpeaker={prevSpeaker}
           isDark={isDark}
           onToggleTheme={handleToggleTheme}
+          isHost={isHost}
+          onClearChat={clearChatMessages}
         />
       )}
 
@@ -270,6 +273,8 @@ export function App() {
         onUpdateUserName={updateUserName}
         onSendMessage={sendChatMessage}
         onSendSignal={sendStageSignal}
+        isHost={isHost}
+        onClearChat={clearChatMessages}
       />
 
       {/* Modals */}

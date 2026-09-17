@@ -193,12 +193,19 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
           setState({ ...incomingState });
         }
         if (incomingState.chatMessages && Array.isArray(incomingState.chatMessages)) {
-          setChatMessages((prev) => {
-            const existing = new Set(prev.map((m) => m.id));
-            const toAdd = incomingState.chatMessages!.filter((m) => !existing.has(m.id));
-            if (toAdd.length === 0) return prev;
-            return [...prev, ...toAdd].sort((a, b) => a.timestamp - b.timestamp);
-          });
+          if (incomingState.chatMessages.length === 0) {
+            setChatMessages([]);
+            if (typeof window !== 'undefined' && stateRef.current.roomCode) {
+              localStorage.removeItem(`baitime_chat_${stateRef.current.roomCode}`);
+            }
+          } else {
+            setChatMessages((prev) => {
+              const existing = new Set(prev.map((m) => m.id));
+              const toAdd = incomingState.chatMessages!.filter((m) => !existing.has(m.id));
+              if (toAdd.length === 0) return prev;
+              return [...prev, ...toAdd].sort((a, b) => a.timestamp - b.timestamp);
+            });
+          }
         }
       },
       (incomingMsg: ChatMessage) => {
@@ -296,6 +303,13 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
               syncServiceRef.current.broadcastState(stateRef.current);
             }
           }, 400);
+        }
+      },
+      () => {
+        // Clear chat handler
+        setChatMessages([]);
+        if (typeof window !== 'undefined' && stateRef.current.roomCode) {
+          localStorage.removeItem(`baitime_chat_${stateRef.current.roomCode}`);
         }
       }
     );
@@ -752,6 +766,27 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
     }
   };
 
+  const clearChatMessages = useCallback(() => {
+    setChatMessages([]);
+    if (typeof window !== 'undefined' && stateRef.current.roomCode) {
+      localStorage.removeItem(`baitime_chat_${stateRef.current.roomCode}`);
+    }
+    if (syncServiceRef.current) {
+      syncServiceRef.current.broadcastClearChat();
+    }
+    if (stateRef.current.hostId === tabId) {
+      setState((prev) => {
+        const nextState = {
+          ...prev,
+          chatMessages: [],
+          lastUpdated: Date.now(),
+        };
+        broadcastState(nextState);
+        return nextState;
+      });
+    }
+  }, [tabId, broadcastState]);
+
   return {
     state,
     isHost,
@@ -772,5 +807,6 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
     joinExistingRoom,
     sendChatMessage,
     sendStageSignal,
+    clearChatMessages,
   };
 }
