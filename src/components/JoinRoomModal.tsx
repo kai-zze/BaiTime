@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { X, LogIn, Key, User, ArrowLeft, Users } from 'lucide-react';
+import { RoomSyncService } from '../lib/supabase';
 
 interface JoinRoomModalProps {
   isOpen: boolean;
   onClose: () => void;
   onBackToWelcome?: () => void;
   onJoinRoom: (code: string, userName: string) => void;
-  currentUserName: string;
+  currentUserName?: string;
   currentRoomCode?: string;
   availableSpeakers?: string[];
 }
@@ -21,24 +22,58 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
 }) => {
   const [roomCode, setRoomCode] = useState('');
   const [userName, setUserName] = useState('');
+  const [liveSpeakers, setLiveSpeakers] = useState<string[]>([]);
+
+  const cleanRoomCode = roomCode.trim().toUpperCase();
+  const isRoomCodeTyped = cleanRoomCode.length > 0;
+
+  // Real-time lookup of host speaker roster when member types room code
+  React.useEffect(() => {
+    if (!isOpen || cleanRoomCode.length < 3) {
+      setLiveSpeakers([]);
+      return;
+    }
+
+    const syncService = new RoomSyncService(cleanRoomCode);
+    syncService.subscribe(
+      (incomingState: any) => {
+        if (incomingState && Array.isArray(incomingState.speakers)) {
+          const names = incomingState.speakers.map((s: { name: string }) => s.name);
+          if (names.length > 0) {
+            setLiveSpeakers(names);
+          }
+        }
+      },
+      () => {},
+      () => {},
+      () => {}
+    );
+
+    syncService.broadcastRequestState();
+
+    return () => {
+      syncService.unsubscribe();
+    };
+  }, [isOpen, cleanRoomCode]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanCode = roomCode.trim().toUpperCase();
-    if (!cleanCode) return;
-    onJoinRoom(cleanCode, userName.trim() || 'Teammate');
+    if (!cleanRoomCode) return;
+    onJoinRoom(cleanRoomCode, userName.trim() || 'Teammate');
   };
-
-  const cleanRoomCode = roomCode.trim().toUpperCase();
-  const isRoomCodeTyped = cleanRoomCode.length > 0;
 
   // Dynamically resolve roster for the typed room code
   const getSpeakersForTypedRoom = (): string[] => {
     if (!isRoomCodeTyped) return [];
 
-    // 1. Try to fetch cached room state from localStorage for the typed room code
+    // 1. Live speakers received from host channel
+    if (liveSpeakers.length > 0) {
+      return liveSpeakers;
+    }
+
+    // 2. Try cached room state from localStorage for typed room code
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(`baitime_room_state_${cleanRoomCode}`);
       if (saved) {
@@ -53,12 +88,12 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
       }
     }
 
-    // 2. If matching currently loaded room code, use availableSpeakers prop
+    // 3. Fallback to availableSpeakers prop
     if (currentRoomCode && cleanRoomCode === currentRoomCode.trim().toUpperCase() && availableSpeakers.length > 0) {
       return availableSpeakers;
     }
 
-    // 3. Fallback default roster
+    // 4. Default fallback roster
     return ['Member 1', 'Member 2', 'Member 3', 'Member 4'];
   };
 
