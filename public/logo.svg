@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Outer Stopwatch Shell -->
+  <!-- Top Crown Button -->
+  <rect x="236" y="24" width="40" height="32" rx="8" fill="#0C1838" />
+  <rect x="246" y="56" width="20" height="20" fill="#0C1838" />
+  
+  <!-- Left Button (10 o'clock) -->
+  <g transform="rotate(-35, 120, 110)">
+    <rect x="104" y="90" width="32" height="20" rx="6" fill="#0C1838" />
+  </g>
+  
+  <!-- Right Button (2 o'clock) -->
+  <g transform="rotate(35, 392, 110)">
+    <rect x="376" y="90" width="32" height="20" rx="6" fill="#FF5B00" />
+  </g>
+
+  <!-- Left Ring Half (Navy Blue) -->
+  <path d="M 256 72 A 184 184 0 0 0 100 350 L 140 376 A 136 136 0 0 1 256 120 Z" fill="#0C1838" />
+  
+  <!-- Right Ring Half (Vibrant Orange) -->
+  <path d="M 256 72 A 184 184 0 0 1 440 256 A 184 184 0 0 1 380 380 L 344 344 A 136 136 0 0 0 392 256 A 136 136 0 0 0 256 120 Z" fill="#FF5B00" />
+
+  <!-- Speech Bubble Center (Vibrant Orange) -->
+  <path d="M 256 136 C 185 136 128 193 128 264 C 128 296 140 325 160 347 L 132 412 L 204 388 C 220 397 237 400 256 400 C 327 400 384 343 384 272 C 384 201 327 136 256 136 Z" fill="#FF5B00" />
+
+  <!-- 3 Dots inside Speech Bubble -->
+  <circle cx="200" cy="268" r="16" fill="#FFFFFF" />
+  <circle cx="256" cy="268" r="16" fill="#FFFFFF" />
+  <circle cx="312" cy="268" r="16" fill="#FFFFFF" />
+</svg>

@@ -1,0 +1,24 @@
+{
+  "name": "BaiTime - Capstone Defense Timer",
+  "short_name": "BaiTime",
+  "description": "Real-time multi-device shared presentation timer and speaker sub-timer for capstone mock defense.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0B132B",
+  "theme_color": "#0B132B",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

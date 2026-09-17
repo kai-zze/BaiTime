@@ -1,0 +1,265 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
+
+/* Enable class-based dark mode for Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =====================
+   LIGHT MODE (default)
+   ===================== */
+:root {
+  --bg-page: #F0F2F7;
+  --text-primary: #0C1838;
+  --text-secondary: #4B5675;
+  --text-muted: #7B87A8;
+  --border-color: #CBD5E1;
+}
+
+/* =====================
+   DARK MODE
+   ===================== */
+.dark {
+  --bg-page: #0B132B;
+  --text-primary: #F8FAFC;
+  --text-secondary: #A0AECF;
+  --text-muted: #6070A0;
+  --border-color: #1E2C4F;
+  color-scheme: dark;
+}
+
+/* Base */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ======================
+   DESIGN SYSTEM ELEVATION & SHADOWS
+   ====================== */
+
+/* Panels — elevated main container panel */
+.flat-panel {
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+}
+.dark .flat-panel {
+  background-color: #111C38;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 12px 36px -6px rgba(0, 0, 0, 0.5), 0 4px 16px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* Cards — inset content card */
+.flat-card {
+  background-color: #F8FAFC;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.06);
+}
+.dark .flat-card {
+  background-color: #0E172F;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 14px -3px rgba(0, 0, 0, 0.35);
+}
+
+/* Primary Button */
+.flat-btn-primary {
+  background-color: #FF5B00;
+  color: #FFFFFF;
+  font-weight: 800;
+  border: 1.5px solid #FF5B00;
+  box-shadow: none !important;
+  transition: background-color 0.15s ease;
+}
+.flat-btn-primary:hover,
+.flat-btn-primary:active {
+  background-color: #E05000;
+  border-color: #E05000;
+  box-shadow: none !important;
+}
+
+/* ======================
+   TYPOGRAPHY HELPERS
+   ====================== */
+.text-primary   { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted     { color: var(--text-muted); }
+
+/* ======================
+   SCROLLBARS
+   ====================== */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #FF5B00; border-radius: 9999px; }
+
+/* ======================
+   ADVANCED WOW ANIMATIONS
+   ====================== */
+
+/* Smooth Modal Pop-In with Spring Curve */
+@keyframes modal-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.93) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-modal-pop {
+  animation: modal-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Drawer Slide In Right */
+@keyframes drawer-slide {
+  0% {
+    transform: translateX(100%);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-drawer-slide {
+  animation: drawer-slide 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Chat Message Pop In */
+@keyframes message-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-message-pop {
+  animation: message-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Glowing Timer Digit Pulse - 1s Sync */
+@keyframes timer-tick {
+  0% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0px rgba(99, 102, 241, 0));
+  }
+  15% {
+    transform: scale(1.025);
+    filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.35));
+  }
+  35%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0px rgba(99, 102, 241, 0));
+  }
+}
+
+.animate-timer-tick {
+  animation: timer-tick 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Urgent Overtime Warning Glow */
+@keyframes urgent-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px 6px rgba(244, 63, 94, 0.2);
+  }
+}
+
+.animate-urgent-glow {
+  animation: urgent-glow 1.2s infinite ease-in-out;
+}
+
+/* Progress Bar Shimmer Highlight */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2.5s infinite linear;
+}
+
+/* Live Pulse Ring Glow */
+@keyframes pulse-ring-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.animate-pulse-ring-glow {
+  animation: pulse-ring-glow 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+/* Unread Badge Bounce */
+@keyframes badge-bounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.12);
+  }
+}
+
+.animate-badge-bounce {
+  animation: badge-bounce 1.2s infinite ease-in-out;
+}
+
+/* Interactive Card Micro-Lift */
+.interactive-card {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.interactive-card:hover {
+  transform: translateY(-2px);
+}
+.interactive-card:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ======================
+   GOOGLE MATERIAL SYMBOLS
+   ====================== */
+.msym {
+  font-family: 'Material Symbols Rounded';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 1.1em;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  vertical-align: middle;
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+  user-select: none;
+}
+
