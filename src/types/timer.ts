@@ -28,6 +28,7 @@ export interface TimerState {
   penaltyConfig: PenaltyConfig;
   lastUpdated: number;
   hostId: string;
+  chatMessages?: ChatMessage[];
 }
 
 export type StageSignalType = 'wrap_up' | 'speak_louder' | 'next_slide' | 'one_min_left' | 'mental_block';

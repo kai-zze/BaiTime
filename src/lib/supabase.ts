@@ -19,6 +19,8 @@ export class RoomSyncService {
   private channel: ReturnType<NonNullable<typeof supabase>['channel']> | null = null;
   private localBroadcastChannel: BroadcastChannel | null = null;
   private roomCode: string;
+  private isSubscribed: boolean = false;
+  private pendingBroadcasts: Array<{ event: string; payload: any }> = [];
 
   constructor(roomCode: string) {
     this.roomCode = roomCode;
@@ -26,6 +28,36 @@ export class RoomSyncService {
     // Fallback local broadcast channel for multi-tab support when Supabase key isn't added yet
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
       this.localBroadcastChannel = new BroadcastChannel(`baitime-room-${roomCode}`);
+    }
+  }
+
+  private sendOrQueue(event: string, payload: any) {
+    if (this.channel && isSupabaseConfigured) {
+      if (this.isSubscribed) {
+        this.channel.send({
+          type: 'broadcast',
+          event,
+          payload,
+        }).catch(() => {
+          this.pendingBroadcasts.push({ event, payload });
+        });
+      } else {
+        this.pendingBroadcasts.push({ event, payload });
+      }
+    }
+  }
+
+  private flushPendingBroadcasts() {
+    if (!this.channel || !this.isSubscribed) return;
+    while (this.pendingBroadcasts.length > 0) {
+      const item = this.pendingBroadcasts.shift();
+      if (item) {
+        this.channel.send({
+          type: 'broadcast',
+          event: item.event,
+          payload: item.payload,
+        }).catch(() => {});
+      }
     }
   }
 
@@ -75,7 +107,7 @@ export class RoomSyncService {
       });
 
       this.channel = supabase.channel(`room:${this.roomCode}`, {
-        config: { broadcast: { self: false } },
+        config: { broadcast: { self: true } },
       });
 
       this.channel
@@ -102,6 +134,8 @@ export class RoomSyncService {
         )
         .subscribe((status) => {
           if (status === 'SUBSCRIBED' && this.channel) {
+            this.isSubscribed = true;
+            this.flushPendingBroadcasts();
             this.channel.send({
               type: 'broadcast',
               event: 'request-state',
@@ -125,13 +159,7 @@ export class RoomSyncService {
 
   public broadcastState(state: any) {
     this.persistRoomState(state);
-    if (this.channel && isSupabaseConfigured) {
-      this.channel.send({
-        type: 'broadcast',
-        event: 'timer-state',
-        payload: state,
-      });
-    }
+    this.sendOrQueue('timer-state', state);
     if (this.localBroadcastChannel) {
       this.localBroadcastChannel.postMessage({
         type: 'timer-state',
@@ -141,13 +169,7 @@ export class RoomSyncService {
   }
 
   public broadcastChatMessage(msg: any) {
-    if (this.channel && isSupabaseConfigured) {
-      this.channel.send({
-        type: 'broadcast',
-        event: 'chat-message',
-        payload: msg,
-      });
-    }
+    this.sendOrQueue('chat-message', msg);
     if (this.localBroadcastChannel) {
       this.localBroadcastChannel.postMessage({
         type: 'chat-message',
@@ -157,13 +179,7 @@ export class RoomSyncService {
   }
 
   public broadcastStageSignal(signal: any) {
-    if (this.channel && isSupabaseConfigured) {
-      this.channel.send({
-        type: 'broadcast',
-        event: 'stage-signal',
-        payload: signal,
-      });
-    }
+    this.sendOrQueue('stage-signal', signal);
     if (this.localBroadcastChannel) {
       this.localBroadcastChannel.postMessage({
         type: 'stage-signal',

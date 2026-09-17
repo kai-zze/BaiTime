@@ -192,6 +192,14 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
         if (stateRef.current.hostId !== tabId) {
           setState({ ...incomingState });
         }
+        if (incomingState.chatMessages && Array.isArray(incomingState.chatMessages)) {
+          setChatMessages((prev) => {
+            const existing = new Set(prev.map((m) => m.id));
+            const toAdd = incomingState.chatMessages!.filter((m) => !existing.has(m.id));
+            if (toAdd.length === 0) return prev;
+            return [...prev, ...toAdd].sort((a, b) => a.timestamp - b.timestamp);
+          });
+        }
       },
       (incomingMsg: ChatMessage) => {
         setChatMessages((prev) => {
@@ -608,9 +616,36 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
       text: text.trim(),
       timestamp: Date.now(),
     };
-    setChatMessages((prev) => [...prev, msg]);
+
+    setChatMessages((prev) => {
+      if (prev.some((m) => m.id === msg.id)) return prev;
+      const updated = [...prev, msg];
+      if (typeof window !== 'undefined' && stateRef.current.roomCode) {
+        try {
+          localStorage.setItem(`baitime_chat_${stateRef.current.roomCode}`, JSON.stringify(updated.slice(-50)));
+        } catch {
+          // LocalStorage fallback
+        }
+      }
+      return updated;
+    });
+
     if (syncServiceRef.current) {
       syncServiceRef.current.broadcastChatMessage(msg);
+    }
+
+    if (stateRef.current.hostId === tabId) {
+      setState((prev) => {
+        const currentChat = prev.chatMessages || [];
+        if (currentChat.some((m) => m.id === msg.id)) return prev;
+        const nextState = {
+          ...prev,
+          chatMessages: [...currentChat, msg].slice(-50),
+          lastUpdated: Date.now(),
+        };
+        broadcastState(nextState);
+        return nextState;
+      });
     }
   };
 
@@ -638,7 +673,33 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
       isSignal: true,
       signalType: type,
     };
-    setChatMessages((prev) => [...prev, chatMsg]);
+
+    setChatMessages((prev) => {
+      if (prev.some((m) => m.id === chatMsg.id)) return prev;
+      const updated = [...prev, chatMsg];
+      if (typeof window !== 'undefined' && stateRef.current.roomCode) {
+        try {
+          localStorage.setItem(`baitime_chat_${stateRef.current.roomCode}`, JSON.stringify(updated.slice(-50)));
+        } catch {
+          // Fallback
+        }
+      }
+      return updated;
+    });
+
+    if (stateRef.current.hostId === tabId) {
+      setState((prev) => {
+        const currentChat = prev.chatMessages || [];
+        if (currentChat.some((m) => m.id === chatMsg.id)) return prev;
+        const nextState = {
+          ...prev,
+          chatMessages: [...currentChat, chatMsg].slice(-50),
+          lastUpdated: Date.now(),
+        };
+        broadcastState(nextState);
+        return nextState;
+      });
+    }
   };
 
   return {
