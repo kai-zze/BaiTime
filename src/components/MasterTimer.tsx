@@ -204,9 +204,9 @@ export const MasterTimer: React.FC<MasterTimerProps> = ({ state, activeSignal, o
               <span>{currentSpeaker.name}</span>
             </h3>
             {currentSpeaker.topic && (
-              <span className="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-300 mt-1.5 flex items-center gap-1.5 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/30">
-                <ClipboardList className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                <span>Topic: {currentSpeaker.topic}</span>
+              <span className="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-300 mt-1.5 flex items-start gap-1.5 bg-indigo-500/10 px-3.5 py-1.5 rounded-2xl border border-indigo-500/30 whitespace-pre-line break-words max-w-xl text-center">
+                <ClipboardList className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
+                <span className="whitespace-pre-line break-words leading-relaxed">Topic: {currentSpeaker.topic}</span>
               </span>
             )}
           </div>

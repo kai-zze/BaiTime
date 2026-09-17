@@ -273,15 +273,15 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
 
                   <div className="sm:col-span-3">
                     <label className="block text-[10px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest mb-1.5">
-                      Session Title
+                      Session Title & Description
                     </label>
-                    <input
-                      type="text"
+                    <textarea
+                      rows={2}
                       value={roomName}
                       onChange={(e) => setRoomName(e.target.value)}
-                      placeholder="Capstone Mock Defense"
+                      placeholder="Capstone Mock Defense (Press Enter for new line)"
                       required
-                      className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
+                      className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 whitespace-pre-wrap resize-y"
                     />
                   </div>
 
@@ -386,13 +386,13 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
                         className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-purple-500"
                       />
 
-                      {/* Topic */}
-                      <input
-                        type="text"
+                      {/* Topic & Description (Multi-line enabled) */}
+                      <textarea
+                        rows={2}
                         value={m.topic}
                         onChange={(e) => handleChange(i, 'topic', e.target.value)}
-                        placeholder="Presentation topic (e.g. System Architecture)"
-                        className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-purple-500/60"
+                        placeholder="Presentation topic or description (Enter for new lines)"
+                        className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-purple-500/60 whitespace-pre-wrap resize-y"
                       />
                     </div>
                   ))}

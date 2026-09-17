@@ -116,7 +116,7 @@ export const StageMode: React.FC<StageModeProps> = ({
               {currentSpeaker.name}
             </h2>
             {currentSpeaker.topic && (
-              <p className="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-300 mt-1 max-w-md truncate">
+              <p className="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-300 mt-1.5 max-w-2xl text-center whitespace-pre-line break-words leading-relaxed">
                 {currentSpeaker.topic}
               </p>
             )}
