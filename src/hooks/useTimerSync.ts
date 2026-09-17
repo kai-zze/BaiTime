@@ -204,8 +204,33 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
       (incomingMsg: ChatMessage) => {
         setChatMessages((prev) => {
           if (prev.some((m) => m.id === incomingMsg.id)) return prev;
-          return [...prev, incomingMsg];
+          const updated = [...prev, incomingMsg];
+          if (typeof window !== 'undefined' && stateRef.current.roomCode) {
+            try {
+              localStorage.setItem(`baitime_chat_${stateRef.current.roomCode}`, JSON.stringify(updated.slice(-50)));
+            } catch {
+              // LocalStorage fallback
+            }
+          }
+          return updated;
         });
+
+        // If this tab is the Host, update host state with the incoming message
+        if (stateRef.current.hostId === tabId) {
+          setState((prevHostState) => {
+            const curList = prevHostState.chatMessages || [];
+            if (curList.some((m) => m.id === incomingMsg.id)) return prevHostState;
+            const nextState = {
+              ...prevHostState,
+              chatMessages: [...curList, incomingMsg].slice(-50),
+              lastUpdated: Date.now(),
+            };
+            if (syncServiceRef.current) {
+              syncServiceRef.current.persistRoomState(nextState);
+            }
+            return nextState;
+          });
+        }
       },
       (incomingSignal: StageSignal) => {
         setActiveSignal(incomingSignal);
@@ -222,8 +247,33 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
         };
         setChatMessages((prev) => {
           if (prev.some((m) => m.id === signalMsg.id)) return prev;
-          return [...prev, signalMsg];
+          const updated = [...prev, signalMsg];
+          if (typeof window !== 'undefined' && stateRef.current.roomCode) {
+            try {
+              localStorage.setItem(`baitime_chat_${stateRef.current.roomCode}`, JSON.stringify(updated.slice(-50)));
+            } catch {
+              // LocalStorage fallback
+            }
+          }
+          return updated;
         });
+
+        // If this tab is the Host, update host state with the signal chat message
+        if (stateRef.current.hostId === tabId) {
+          setState((prevHostState) => {
+            const curList = prevHostState.chatMessages || [];
+            if (curList.some((m) => m.id === signalMsg.id)) return prevHostState;
+            const nextState = {
+              ...prevHostState,
+              chatMessages: [...curList, signalMsg].slice(-50),
+              lastUpdated: Date.now(),
+            };
+            if (syncServiceRef.current) {
+              syncServiceRef.current.persistRoomState(nextState);
+            }
+            return nextState;
+          });
+        }
 
         // Auto clear signal notification after 4s
         setTimeout(() => {

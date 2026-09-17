@@ -133,17 +133,21 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
   };
 
   const handleMentalBlock = () => {
-    const msg = isCurrentPresenter
-      ? `MENTAL BLOCK ALERT: Presenter ${userName} hit a mental block — please proceed to Next Presenter`
-      : `MENTAL BLOCK REMINDER: ${userName} requested to proceed to Next Presenter`;
+    if (!isCurrentPresenter) {
+      triggerToast(`Locked: Only ${currentSpeaker?.name || 'Active Presenter'} can report mental block`);
+      return;
+    }
+    const msg = `MENTAL BLOCK ALERT: Presenter ${userName} hit a mental block — please proceed to Next Presenter`;
     onSendSignal('mental_block', msg);
     triggerToast(`Mental Block alert sent to Host! Reminded to proceed to Next Presenter.`);
   };
 
   const handleFinishPart = () => {
-    const msg = isCurrentPresenter
-      ? `FINISHED PART ALERT: Presenter ${userName} finished their presentation part — ready for Next Presenter`
-      : `FINISHED PART REMINDER: ${userName} indicated presenter finished their part`;
+    if (!isCurrentPresenter) {
+      triggerToast(`Locked: Only ${currentSpeaker?.name || 'Active Presenter'} can mark part as finished`);
+      return;
+    }
+    const msg = `FINISHED PART ALERT: Presenter ${userName} finished their presentation part — ready for Next Presenter`;
     onSendSignal('finish_part', msg);
     triggerToast(`Finished part alert sent to host! Reminded to proceed to Next Presenter.`);
   };
@@ -297,10 +301,20 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
                   <button
                     type="button"
                     onClick={handleMentalBlock}
-                    className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-3 py-1.5 rounded-xl border border-amber-400/40 text-xs font-black shadow-sm active:scale-95 transition-all cursor-pointer"
-                    title="Remind host to proceed to next presenter due to mental block"
+                    disabled={!isCurrentPresenter}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-black shadow-sm transition-all ${
+                      isCurrentPresenter
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white border-amber-400/40 active:scale-95 cursor-pointer'
+                        : 'bg-gray-200 dark:bg-gray-800/80 text-gray-400 dark:text-gray-500 border-gray-300 dark:border-gray-700 cursor-not-allowed opacity-60'
+                    }`}
+                    title={
+                      isCurrentPresenter
+                        ? "Remind host to proceed to next presenter due to mental block"
+                        : `Locked: Only active presenter (${currentSpeaker?.name || 'Presenter'}) can signal mental block`
+                    }
                   >
-                    <Brain className="w-3.5 h-3.5 animate-bounce" />
+                    {!isCurrentPresenter && <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+                    <Brain className={`w-3.5 h-3.5 ${isCurrentPresenter ? 'animate-bounce' : ''}`} />
                     <span>Mental Block — Proceed Next</span>
                   </button>
                 </div>
@@ -330,7 +344,7 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
               <p className="text-[11px] text-gray-600 dark:text-gray-400 mb-3 font-medium">
                 {isCurrentPresenter
                   ? 'You are on stage! Tap buttons below to signal slide changes or mental block to the host:'
-                  : `Only the active presenter (${currentSpeaker?.name || 'Presenter'}) can control slides.`}
+                  : `Only the active presenter (${currentSpeaker?.name || 'Presenter'}) can control slides or signals.`}
               </p>
             </div>
 
@@ -368,18 +382,36 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
               {/* Finish Part Button */}
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span className={`text-[11px] font-extrabold flex items-center gap-1.5 ${
+                    isCurrentPresenter ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'
+                  }`}>
+                    <CheckCircle2 className={`w-4 h-4 shrink-0 ${isCurrentPresenter ? 'text-emerald-500' : 'text-gray-400'}`} />
                     Finished your presentation part?
                   </span>
-                  <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400 font-semibold">1-Tap Ready</span>
+                  {isCurrentPresenter ? (
+                    <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400 font-semibold">1-Tap Ready</span>
+                  ) : (
+                    <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-amber-500" /> Locked
+                    </span>
+                  )}
                 </div>
                 <button
                   type="button"
                   onClick={handleFinishPart}
-                  className="w-full py-3 px-4 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white border border-emerald-400/40 shadow-lg shadow-emerald-950/20 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  title="Press when finished presenting your part to notify host to proceed to next presenter"
+                  disabled={!isCurrentPresenter}
+                  className={`w-full py-3 px-4 rounded-xl font-black text-xs sm:text-sm border transition-all flex items-center justify-center gap-2 ${
+                    isCurrentPresenter
+                      ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white border-emerald-400/40 shadow-lg shadow-emerald-950/20 active:scale-95 cursor-pointer'
+                      : 'bg-gray-100 dark:bg-gray-800/60 text-gray-400 dark:text-gray-600 border-gray-200 dark:border-gray-800 cursor-not-allowed opacity-50'
+                  }`}
+                  title={
+                    isCurrentPresenter
+                      ? "Press when finished presenting your part to notify host to proceed to next presenter"
+                      : `Locked: Only active presenter (${currentSpeaker?.name || 'Presenter'}) can signal part finished`
+                  }
                 >
+                  {!isCurrentPresenter && <Lock className="w-4 h-4 text-amber-500 shrink-0" />}
                   <CheckCircle2 className="w-4.5 h-4.5 shrink-0" />
                   <span>FINISH PRESENTING PART (NEXT PRESENTER)</span>
                   <FastForward className="w-4.5 h-4.5 shrink-0" />
@@ -389,19 +421,37 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
               {/* Mental Block Button */}
               <div className="flex flex-col gap-1 pt-1 border-t border-gray-200/60 dark:border-gray-800/60">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                    <Brain className="w-4 h-4 text-amber-500 shrink-0 animate-pulse" />
+                  <span className={`text-[11px] font-extrabold flex items-center gap-1.5 ${
+                    isCurrentPresenter ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 dark:text-gray-500'
+                  }`}>
+                    <Brain className={`w-4 h-4 shrink-0 ${isCurrentPresenter ? 'text-amber-500 animate-pulse' : 'text-gray-400'}`} />
                     Stuck or hit a Mental Block?
                   </span>
-                  <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400 font-semibold">1-Tap Host Alert</span>
+                  {isCurrentPresenter ? (
+                    <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400 font-semibold">1-Tap Host Alert</span>
+                  ) : (
+                    <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-amber-500" /> Locked
+                    </span>
+                  )}
                 </div>
                 <button
                   type="button"
                   onClick={handleMentalBlock}
-                  className="w-full py-3 px-4 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white border border-amber-300/40 shadow-lg shadow-orange-950/20 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  title="Press if stuck or mental block to remind host to proceed to next presenter"
+                  disabled={!isCurrentPresenter}
+                  className={`w-full py-3 px-4 rounded-xl font-black text-xs sm:text-sm border transition-all flex items-center justify-center gap-2 ${
+                    isCurrentPresenter
+                      ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white border-amber-300/40 shadow-lg shadow-orange-950/20 active:scale-95 cursor-pointer'
+                      : 'bg-gray-100 dark:bg-gray-800/60 text-gray-400 dark:text-gray-600 border-gray-200 dark:border-gray-800 cursor-not-allowed opacity-50'
+                  }`}
+                  title={
+                    isCurrentPresenter
+                      ? "Press if stuck or mental block to remind host to proceed to next presenter"
+                      : `Locked: Only active presenter (${currentSpeaker?.name || 'Presenter'}) can signal mental block`
+                  }
                 >
-                  <Brain className="w-4.5 h-4.5 shrink-0 animate-bounce" />
+                  {!isCurrentPresenter && <Lock className="w-4 h-4 text-amber-500 shrink-0" />}
+                  <Brain className={`w-4.5 h-4.5 shrink-0 ${isCurrentPresenter ? 'animate-bounce' : ''}`} />
                   <span>MENTAL BLOCK — REMIND HOST TO PROCEED NEXT</span>
                   <FastForward className="w-4.5 h-4.5 shrink-0" />
                 </button>
