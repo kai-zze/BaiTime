@@ -39,7 +39,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
   currentHostName = 'Host Leader',
 }) => {
   const [activeTab, setActiveTab] = useState<'create' | 'reenter'>('create');
-  const [hostName, setHostName] = useState(currentHostName);
+  const [hostName, setHostName] = useState('');
   const [roomName, setRoomName] = useState('Capstone Mock Defense');
   const [totalMinutes, setTotalMinutes] = useState<number | string>(15);
   const [members, setMembers] = useState<MemberEntry[]>(DEFAULT_MEMBERS);
@@ -139,9 +139,16 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
             </div>
           </div>
           <button
-            onClick={onClose}
+            type="button"
+            onClick={() => {
+              if (onBackToWelcome) {
+                onBackToWelcome();
+              } else {
+                onClose();
+              }
+            }}
             className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-xl bg-gray-200/80 dark:bg-gray-800/80 hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-            title="Close Setup"
+            title="Close & Go Back"
           >
             <X className="w-5 h-5" />
           </button>
@@ -219,7 +226,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
                       type="text"
                       value={hostName}
                       onChange={(e) => setHostName(e.target.value)}
-                      placeholder="e.g. John (Host)"
+                      placeholder={`e.g. ${currentHostName || 'Host Leader'}`}
                       required
                       className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
                     />

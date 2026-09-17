@@ -283,9 +283,7 @@ export function App() {
         isOpen={isCreateOpen}
         onClose={() => {
           setIsCreateOpen(false);
-          if (!isHost && !isMemberScreen) {
-            setIsWelcomeOpen(true);
-          }
+          setIsWelcomeOpen(true);
         }}
         onBackToWelcome={() => {
           setIsCreateOpen(false);
@@ -313,9 +311,7 @@ export function App() {
         isOpen={isJoinOpen}
         onClose={() => {
           setIsJoinOpen(false);
-          if (!isMemberScreen) {
-            setIsWelcomeOpen(true);
-          }
+          setIsWelcomeOpen(true);
         }}
         onBackToWelcome={() => {
           setIsJoinOpen(false);
