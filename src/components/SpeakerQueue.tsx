@@ -1,11 +1,12 @@
 import type { Speaker } from '../types/timer';
-import { CheckCircle2, Mic, Clock, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Mic, Clock, ArrowRight, CheckCheck } from 'lucide-react';
 
 interface SpeakerQueueProps {
   speakers: Speaker[];
   currentIndex: number;
   isHost: boolean;
   onSelectSpeaker?: (index: number) => void;
+  onFinishEarly?: () => void;
 }
 
 export const SpeakerQueue: React.FC<SpeakerQueueProps> = ({
@@ -13,6 +14,7 @@ export const SpeakerQueue: React.FC<SpeakerQueueProps> = ({
   currentIndex,
   isHost,
   onSelectSpeaker,
+  onFinishEarly,
 }) => {
   const formatSecs = (secs: number) => {
     const mins = Math.floor(secs / 60);
@@ -121,6 +123,21 @@ export const SpeakerQueue: React.FC<SpeakerQueueProps> = ({
                   </span>
                 )}
               </div>
+
+              {/* Done Early button — only for host on active speaker */}
+              {isActive && isHost && onFinishEarly && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Don't trigger card click (selectSpeaker)
+                    onFinishEarly();
+                  }}
+                  className="mt-3 w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-[11px] font-black uppercase tracking-wider transition-all shadow-sm cursor-pointer border border-emerald-500"
+                >
+                  <CheckCheck className="w-4 h-4" />
+                  <span>Done — Finish Presenting Early</span>
+                </button>
+              )}
             </div>
           );
         })}

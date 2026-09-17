@@ -218,6 +218,7 @@ export function App() {
               selectSpeaker(idx);
             }
           }}
+          onFinishEarly={isHost ? nextSpeaker : undefined}
         />
       </main>
 
