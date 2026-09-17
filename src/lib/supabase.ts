@@ -172,8 +172,11 @@ export class RoomSyncService {
     }
   }
 
-  public broadcastRequestState() {
-    this.fetchPersistedRoomState();
+  public broadcastRequestState(onState?: (state: any) => void) {
+    // Actually USE the persisted state result
+    this.fetchPersistedRoomState().then((state) => {
+      if (state && onState) onState(state);
+    });
     if (this.channel && isSupabaseConfigured) {
       this.channel.send({
         type: 'broadcast',

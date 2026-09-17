@@ -6,7 +6,7 @@ import type {
   StageSignal,
   StageSignalType,
 } from "../types/timer";
-import { RoomSyncService } from "../lib/supabase";
+import { RoomSyncService, supabase } from "../lib/supabase";
 import { soundFx } from "../lib/audio";
 
 const STORAGE_KEY_HOST_ID = "baitime_host_secret_id";
@@ -487,7 +487,24 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
       };
       localStorage.setItem("baitime_last_created_room", next.roomCode);
       localStorage.setItem(`baitime_room_state_${next.roomCode}`, JSON.stringify(next));
-      broadcastState(next);
+
+      // Directly persist to Supabase with the CORRECT new room code
+      // (syncServiceRef may still point to old room, so we write directly)
+      if (supabase) {
+        supabase.from('rooms').upsert({
+          code: targetCode,
+          state: next,
+          updated_at: new Date().toISOString(),
+        }).then(() => {
+          // Also broadcast via channel after DB write
+          if (syncServiceRef.current) {
+            syncServiceRef.current.broadcastState(next);
+          }
+        });
+      } else {
+        broadcastState(next);
+      }
+
       return next;
     });
   };
