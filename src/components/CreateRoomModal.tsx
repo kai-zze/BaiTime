@@ -36,7 +36,6 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
   onCreateRoom,
   onReenterRoom,
   currentRoomCode = '',
-  currentHostName = 'Host Leader',
 }) => {
   const [activeTab, setActiveTab] = useState<'create' | 'reenter'>('create');
   const [hostName, setHostName] = useState('');
@@ -226,7 +225,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
                       type="text"
                       value={hostName}
                       onChange={(e) => setHostName(e.target.value)}
-                      placeholder={`e.g. ${currentHostName || 'Host Leader'}`}
+                      placeholder="e.g. Host Leader"
                       required
                       className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
                     />
