@@ -34,9 +34,9 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
   const cleanRoomCode = roomCode.trim().toUpperCase();
   const isRoomCodeTyped = cleanRoomCode.length > 0;
 
-  // Listen live to host room state when member types room code
+  // Listen live to host room state when member types 6-character room code
   useEffect(() => {
-    if (!isOpen || cleanRoomCode.length < 3) {
+    if (!isOpen || cleanRoomCode.length < 6) {
       setLiveSpeakers([]);
       return;
     }
@@ -59,9 +59,14 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
       () => {}
     );
 
+    // Request state immediately and retry after short delay to ensure channel is ready
     syncService.broadcastRequestState();
+    const timer = setTimeout(() => {
+      syncService.broadcastRequestState();
+    }, 300);
 
     return () => {
+      clearTimeout(timer);
       syncService.unsubscribe();
     };
   }, [isOpen, cleanRoomCode]);
@@ -100,7 +105,13 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
       return availableSpeakers.map((n) => ({ name: n }));
     }
 
-    return [];
+    // 4. Instant fallback roster cards while live channel connects
+    return [
+      { name: 'Member 1', topic: 'Introduction & Problem Statement' },
+      { name: 'Member 2', topic: 'System Architecture & Methodology' },
+      { name: 'Member 3', topic: 'Live Feature Demo & Implementation' },
+      { name: 'Member 4', topic: 'Results, Conclusion & Defense Q&A' },
+    ];
   };
 
   const activeRoster = getSpeakersForTypedRoom();
@@ -188,11 +199,16 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                   <Users className="w-4 h-4 text-indigo-500 shrink-0" />
                   Select Your Name:
                 </label>
-                {activeRoster.length === 0 && (
-                  <span className="text-[10px] font-mono font-bold text-amber-500 animate-pulse">
-                    Connecting to host...
+                {liveSpeakers.length > 0 ? (
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/30 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                    Host Roster Live
                   </span>
-                )}
+                ) : cleanRoomCode.length >= 6 ? (
+                  <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/30 animate-pulse">
+                    Syncing Host Roster...
+                  </span>
+                ) : null}
               </div>
 
               {activeRoster.length > 0 ? (
