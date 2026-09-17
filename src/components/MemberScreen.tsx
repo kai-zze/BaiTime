@@ -20,6 +20,7 @@ import {
   Brain,
   FastForward,
   ClipboardList,
+  CheckCircle2,
 } from 'lucide-react';
 
 interface MemberScreenProps {
@@ -137,6 +138,14 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
       : `MENTAL BLOCK REMINDER: ${userName} requested to proceed to Next Presenter`;
     onSendSignal('mental_block', msg);
     triggerToast(`Mental Block alert sent to Host! Reminded to proceed to Next Presenter.`);
+  };
+
+  const handleFinishPart = () => {
+    const msg = isCurrentPresenter
+      ? `FINISHED PART ALERT: Presenter ${userName} finished their presentation part — ready for Next Presenter`
+      : `FINISHED PART REMINDER: ${userName} indicated presenter finished their part`;
+    onSendSignal('finish_part', msg);
+    triggerToast(`Finished part alert sent to host! Reminded to proceed to Next Presenter.`);
   };
 
   const handleExitClick = () => {
@@ -354,25 +363,49 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
               </button>
             </div>
 
-            {/* Mental Block / Pass to Next Presenter Dedicated Button */}
-            <div className="pt-3 border-t border-gray-200 dark:border-indigo-900/60 flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                  <Brain className="w-4 h-4 text-amber-500 shrink-0 animate-pulse" />
-                  Stuck or hit a Mental Block?
-                </span>
-                <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400 font-semibold">1-Tap Host Alert</span>
+            {/* Finish Part & Mental Block Quick Buttons */}
+            <div className="pt-3 border-t border-gray-200 dark:border-indigo-900/60 flex flex-col gap-3">
+              {/* Finish Part Button */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    Finished your presentation part?
+                  </span>
+                  <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400 font-semibold">1-Tap Ready</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleFinishPart}
+                  className="w-full py-3 px-4 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white border border-emerald-400/40 shadow-lg shadow-emerald-950/20 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  title="Press when finished presenting your part to notify host to proceed to next presenter"
+                >
+                  <CheckCircle2 className="w-4.5 h-4.5 shrink-0" />
+                  <span>FINISH PRESENTING PART (NEXT PRESENTER)</span>
+                  <FastForward className="w-4.5 h-4.5 shrink-0" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={handleMentalBlock}
-                className="w-full py-3 px-4 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white border border-amber-300/40 shadow-lg shadow-orange-950/20 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                title="Press if stuck or mental block to remind host to proceed to next presenter"
-              >
-                <Brain className="w-4.5 h-4.5 shrink-0 animate-bounce" />
-                <span>MENTAL BLOCK — REMIND HOST TO PROCEED NEXT</span>
-                <FastForward className="w-4.5 h-4.5 shrink-0" />
-              </button>
+
+              {/* Mental Block Button */}
+              <div className="flex flex-col gap-1 pt-1 border-t border-gray-200/60 dark:border-gray-800/60">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                    <Brain className="w-4 h-4 text-amber-500 shrink-0 animate-pulse" />
+                    Stuck or hit a Mental Block?
+                  </span>
+                  <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400 font-semibold">1-Tap Host Alert</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleMentalBlock}
+                  className="w-full py-3 px-4 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white border border-amber-300/40 shadow-lg shadow-orange-950/20 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  title="Press if stuck or mental block to remind host to proceed to next presenter"
+                >
+                  <Brain className="w-4.5 h-4.5 shrink-0 animate-bounce" />
+                  <span>MENTAL BLOCK — REMIND HOST TO PROCEED NEXT</span>
+                  <FastForward className="w-4.5 h-4.5 shrink-0" />
+                </button>
+              </div>
             </div>
           </div>
 
