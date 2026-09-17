@@ -99,9 +99,15 @@ export const SpeakerQueue: React.FC<SpeakerQueueProps> = ({
                   </span>
                   {statusBadge}
                 </div>
-                <h3 className={`font-black text-sm truncate mb-1 ${nameCls}`}>
+                <h3 className={`font-black text-sm truncate mb-0.5 ${nameCls}`}>
                   {speaker.name}
                 </h3>
+                {speaker.topic && (
+                  <div className="text-xs font-semibold text-purple-700 dark:text-purple-300 truncate flex items-center gap-1 mt-1 bg-purple-500/10 dark:bg-purple-950/40 px-2 py-0.5 rounded-lg border border-purple-500/20">
+                    <span className="text-[10px]">📋</span>
+                    <span className="truncate">{speaker.topic}</span>
+                  </div>
+                )}
               </div>
 
               <div className="mt-3 pt-2 border-t border-gray-200/80 dark:border-gray-800/80 flex items-center justify-between text-xs">

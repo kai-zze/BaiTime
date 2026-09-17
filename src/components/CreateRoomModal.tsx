@@ -23,10 +23,10 @@ interface CreateRoomModalProps {
 }
 
 const DEFAULT_MEMBERS: MemberEntry[] = [
-  { name: 'Member 1', topic: '', minutes: 3 },
-  { name: 'Member 2', topic: '', minutes: 3 },
-  { name: 'Member 3', topic: '', minutes: 3 },
-  { name: 'Member 4', topic: '', minutes: 3 },
+  { name: 'Member 1', topic: 'Introduction & Problem Statement', minutes: 3 },
+  { name: 'Member 2', topic: 'System Architecture & Methodology', minutes: 3 },
+  { name: 'Member 3', topic: 'Live Feature Demo & Implementation', minutes: 3 },
+  { name: 'Member 4', topic: 'Results, Conclusion & Defense Q&A', minutes: 3 },
 ];
 
 export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({

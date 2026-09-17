@@ -167,12 +167,18 @@ export const MasterTimer: React.FC<MasterTimerProps> = ({ state, activeSignal })
             </span>
           </div>
 
-          {/* Sub Timer Header: Active Presenter Name */}
+          {/* Sub Timer Header: Active Presenter Name & Topic */}
           <div className="flex flex-col items-center justify-center">
             <h3 className="text-lg sm:text-2xl font-black text-[#0C1838] dark:text-white tracking-wide truncate flex items-center justify-center gap-2">
               <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
               <span>{currentSpeaker.name}</span>
             </h3>
+            {currentSpeaker.topic && (
+              <span className="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-300 mt-1.5 flex items-center gap-1.5 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/30">
+                <span>📋</span>
+                <span>Topic: {currentSpeaker.topic}</span>
+              </span>
+            )}
           </div>
 
           {/* Main Speaker Timer & Time Left Centered Below Sub Timer Header */}

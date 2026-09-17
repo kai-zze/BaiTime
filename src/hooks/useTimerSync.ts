@@ -30,6 +30,7 @@ const DEFAULT_SPEAKERS: Speaker[] = [
   {
     id: "sp-1",
     name: "Member 1",
+    topic: "Introduction & Problem Statement",
     allocatedSeconds: 180,
     elapsedSeconds: 0,
     status: "active",
@@ -37,6 +38,7 @@ const DEFAULT_SPEAKERS: Speaker[] = [
   {
     id: "sp-2",
     name: "Member 2",
+    topic: "System Architecture & Methodology",
     allocatedSeconds: 180,
     elapsedSeconds: 0,
     status: "waiting",
@@ -44,6 +46,7 @@ const DEFAULT_SPEAKERS: Speaker[] = [
   {
     id: "sp-3",
     name: "Member 3",
+    topic: "Live Feature Demo & Implementation",
     allocatedSeconds: 180,
     elapsedSeconds: 0,
     status: "waiting",
@@ -51,6 +54,7 @@ const DEFAULT_SPEAKERS: Speaker[] = [
   {
     id: "sp-4",
     name: "Member 4",
+    topic: "Results, Conclusion & Defense Q&A",
     allocatedSeconds: 180,
     elapsedSeconds: 0,
     status: "waiting",
@@ -433,12 +437,13 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
   const updateRoomConfiguration = (
     roomName: string,
     totalMins: number,
-    speakerConfigs: Array<{ name: string; minutes: number }>,
+    speakerConfigs: Array<{ name: string; topic?: string; minutes: number }>,
   ) => {
     const totalSecs = totalMins * 60;
     const newSpeakers: Speaker[] = speakerConfigs.map((cfg, idx) => ({
       id: `sp-${generateId()}`,
       name: cfg.name,
+      topic: cfg.topic || `Topic ${idx + 1}`,
       allocatedSeconds: Math.round(cfg.minutes * 60),
       elapsedSeconds: 0,
       status: idx === 0 ? "active" : "waiting",

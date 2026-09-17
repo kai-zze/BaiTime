@@ -238,9 +238,10 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
                   {currentSpeaker.name}
                 </h2>
                 {currentSpeaker.topic && (
-                  <p className="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-300 mt-1.5">
-                    Topic: {currentSpeaker.topic}
-                  </p>
+                  <div className="mt-2.5 inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-indigo-500/10 dark:bg-indigo-950/60 border border-indigo-500/30 text-indigo-600 dark:text-indigo-300 text-xs sm:text-sm font-extrabold shadow-xs">
+                    <span>📋</span>
+                    <span>Reporting Topic: <strong>{currentSpeaker.topic}</strong></span>
+                  </div>
                 )}
               </div>
             )}
@@ -331,6 +332,72 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
                 <span>NEXT SLIDE</span>
                 <ChevronRight className="w-5 h-5" />
               </button>
+            </div>
+          </div>
+
+          {/* Presentation Topics & Speaker Roster Schedule */}
+          <div className="bg-white dark:bg-[#111C38] rounded-2xl p-4 border border-gray-200/80 dark:border-indigo-900/60 shadow-xl shadow-indigo-950/10 dark:shadow-black/40">
+            <div className="flex items-center justify-between pb-2 mb-3 border-b border-gray-200 dark:border-gray-800">
+              <div className="flex items-center gap-2">
+                <span className="text-base">📋</span>
+                <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 dark:text-white">
+                  Presentation Topics & Speaker Schedule
+                </h3>
+              </div>
+              <span className="text-[10px] font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-200 dark:border-indigo-800">
+                {speakers.length} Topics
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              {speakers.map((sp, idx) => {
+                const isActive = idx === currentSpeakerIndex;
+                const isDone = idx < currentSpeakerIndex;
+
+                let badgeCls = 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700';
+                let cardStyle = 'bg-gray-50/50 dark:bg-gray-900/40 border-gray-200/60 dark:border-gray-800/60';
+                let statusLabel = `SLOT ${idx + 1}`;
+
+                if (isDone) {
+                  badgeCls = 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
+                  cardStyle = 'bg-emerald-500/5 dark:bg-emerald-950/20 border-emerald-500/20';
+                  statusLabel = 'COMPLETED';
+                } else if (isActive) {
+                  badgeCls = 'bg-indigo-600 text-white font-black animate-pulse';
+                  cardStyle = 'bg-indigo-50 dark:bg-indigo-950/50 border-indigo-400 dark:border-indigo-600 ring-1 ring-indigo-400/40';
+                  statusLabel = 'PRESENTING NOW';
+                } else if (idx === currentSpeakerIndex + 1) {
+                  badgeCls = 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30';
+                  cardStyle = 'bg-amber-50/60 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800';
+                  statusLabel = 'UP NEXT';
+                }
+
+                return (
+                  <div
+                    key={sp.id || idx}
+                    className={`p-2.5 rounded-xl border text-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${cardStyle}`}
+                  >
+                    <div className="flex items-start gap-2 min-w-0">
+                      <span className={`text-[9px] font-mono font-black px-2 py-0.5 rounded-md border shrink-0 ${badgeCls}`}>
+                        {statusLabel}
+                      </span>
+                      <div className="min-w-0">
+                        <span className="font-extrabold text-gray-900 dark:text-white block truncate">
+                          {sp.name}
+                        </span>
+                        {sp.topic && (
+                          <span className="text-[11px] font-semibold text-purple-700 dark:text-purple-300 block truncate mt-0.5">
+                            📋 {sp.topic}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold text-gray-500 dark:text-gray-400 shrink-0 self-end sm:self-center">
+                      {Math.round(sp.allocatedSeconds / 60)} min
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
