@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { ChatMessage, StageSignalType } from '../types/timer';
-import { MessageSquare, Send, X, Zap, Volume2, FastForward, Clock, Edit2, Check } from 'lucide-react';
+import { MessageSquare, Send, X, Zap, Volume2, FastForward, Clock, Edit2, Check, Brain } from 'lucide-react';
 
 interface GroupChatDrawerProps {
   isOpen: boolean;
@@ -56,6 +56,12 @@ export const GroupChatDrawer: React.FC<GroupChatDrawerProps> = ({
   // Helper for rendering signal message badges
   const getSignalBadgeStyle = (text: string) => {
     const lower = text.toLowerCase();
+    if (lower.includes('mental') || lower.includes('stuck') || lower.includes('block')) {
+      return {
+        bg: 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-800 dark:text-amber-200 border-amber-400 dark:border-amber-600 font-extrabold',
+        icon: <Brain className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 animate-bounce" />,
+      };
+    }
     if (lower.includes('louder') || lower.includes('speak')) {
       return {
         bg: 'bg-cyan-50 dark:bg-cyan-950/60 text-cyan-800 dark:text-cyan-300 border-cyan-300 dark:border-cyan-800/80',

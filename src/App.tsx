@@ -194,7 +194,12 @@ export function App() {
         )}
 
         {/* Master Countdown HUD */}
-        <MasterTimer state={state} activeSignal={activeSignal} />
+        <MasterTimer
+          state={state}
+          activeSignal={activeSignal}
+          onNextSpeaker={nextSpeaker}
+          isHost={isHost}
+        />
 
         {/* Host Control Toolbar */}
         <TimerControls

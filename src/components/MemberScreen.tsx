@@ -17,6 +17,8 @@ import {
   Copy,
   Check,
   Lock,
+  Brain,
+  FastForward,
 } from 'lucide-react';
 
 interface MemberScreenProps {
@@ -126,6 +128,14 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
     }
     onSendSignal('next_slide', `${userName} requested PREVIOUS PPT SLIDE ⬅`);
     triggerToast(`Previous PPT Slide Signal Sent to Host! ⬅`);
+  };
+
+  const handleMentalBlock = () => {
+    const msg = isCurrentPresenter
+      ? `🧠 MENTAL BLOCK ALERT! Presenter ${userName} hit a mental block — please proceed to the Next Presenter!`
+      : `🧠 MENTAL BLOCK REMINDER! ${userName} requested to proceed to the Next Presenter!`;
+    onSendSignal('mental_block', msg);
+    triggerToast(`🧠 Mental Block alert sent to Host! Reminded to proceed to Next Presenter.`);
   };
 
   const handleExitClick = () => {
@@ -274,6 +284,15 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
                     <span>Up Next:</span>
                     <span className="font-black text-sm">{nextSpeaker ? nextSpeaker.name : 'Final Presenter'}</span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleMentalBlock}
+                    className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-3 py-1.5 rounded-xl border border-amber-400/40 text-xs font-black shadow-sm active:scale-95 transition-all cursor-pointer"
+                    title="Remind host to proceed to next presenter due to mental block"
+                  >
+                    <Brain className="w-3.5 h-3.5 animate-bounce" />
+                    <span>🧠 Mental Block — Proceed Next</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -300,7 +319,7 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
               </div>
               <p className="text-[11px] text-gray-600 dark:text-gray-400 mb-3 font-medium">
                 {isCurrentPresenter
-                  ? 'You are on stage! Tap buttons below to signal slide changes to the host:'
+                  ? 'You are on stage! Tap buttons below to signal slide changes or mental block to the host:'
                   : `Only the active presenter (${currentSpeaker?.name || 'Presenter'}) can control slides.`}
               </p>
             </div>
@@ -331,6 +350,27 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
               >
                 <span>NEXT SLIDE</span>
                 <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Mental Block / Pass to Next Presenter Dedicated Button */}
+            <div className="pt-3 border-t border-gray-200 dark:border-indigo-900/60 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                  <Brain className="w-4 h-4 text-amber-500 shrink-0 animate-pulse" />
+                  Stuck or hit a Mental Block?
+                </span>
+                <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400 font-semibold">1-Tap Host Alert</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleMentalBlock}
+                className="w-full py-3 px-4 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white border border-amber-300/40 shadow-lg shadow-orange-950/20 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                title="Press if stuck or mental block to remind host to proceed to next presenter"
+              >
+                <Brain className="w-4.5 h-4.5 shrink-0 animate-bounce" />
+                <span>🧠 MENTAL BLOCK — REMIND HOST TO PROCEED NEXT</span>
+                <FastForward className="w-4.5 h-4.5 shrink-0" />
               </button>
             </div>
           </div>

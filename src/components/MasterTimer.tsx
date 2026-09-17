@@ -1,12 +1,14 @@
-import type { TimerState } from '../types/timer';
-import { Clock, User, TrendingDown } from 'lucide-react';
+import type { TimerState, StageSignal } from '../types/timer';
+import { Clock, User, TrendingDown, Brain, FastForward } from 'lucide-react';
 
 interface MasterTimerProps {
   state: TimerState;
-  activeSignal?: { senderName: string; message: string } | null;
+  activeSignal?: StageSignal | { senderName: string; message: string; type?: string } | null;
+  onNextSpeaker?: () => void;
+  isHost?: boolean;
 }
 
-export const MasterTimer: React.FC<MasterTimerProps> = ({ state, activeSignal }) => {
+export const MasterTimer: React.FC<MasterTimerProps> = ({ state, activeSignal, onNextSpeaker, isHost }) => {
   const { totalDurationSeconds, elapsedSeconds, speakers, currentSpeakerIndex, penaltyConfig } = state;
 
   const currentSpeaker = speakers[currentSpeakerIndex];
@@ -59,6 +61,10 @@ export const MasterTimer: React.FC<MasterTimerProps> = ({ state, activeSignal })
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (totalPercent / 100) * circumference;
 
+  const isMentalBlockSignal = activeSignal
+    ? activeSignal.message.toLowerCase().includes('mental') || (activeSignal as any).type === 'mental_block'
+    : false;
+
   return (
     <div className="relative w-full flat-panel rounded-2xl p-4 sm:p-8 flex flex-col items-center justify-center overflow-hidden transition-colors shadow-xl shadow-indigo-950/10 dark:shadow-black/40 border border-gray-200/80 dark:border-indigo-900/60">
       {/* Top Banner Status & Score Penalty */}
@@ -86,18 +92,42 @@ export const MasterTimer: React.FC<MasterTimerProps> = ({ state, activeSignal })
 
       {/* Host Live Stage & Slide Signal Banner */}
       {activeSignal && (
-        <div className="w-full my-2.5 px-4 py-3 rounded-2xl bg-gradient-to-r from-[#FF5B00] via-purple-600 to-indigo-600 text-white flex items-center justify-between gap-3 shadow-xl animate-message-pop z-20 border-2 border-white/20">
+        <div
+          className={`w-full my-2.5 px-4 py-3 rounded-2xl text-white flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xl animate-message-pop z-20 border-2 border-white/20 ${
+            isMentalBlockSignal
+              ? 'bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 animate-pulse-ring'
+              : 'bg-gradient-to-r from-[#FF5B00] via-purple-600 to-indigo-600'
+          }`}
+        >
           <div className="flex items-center gap-2.5 text-xs sm:text-sm font-black tracking-wide">
-            <span className="msym text-xl text-amber-300 animate-bounce">bolt</span>
+            {isMentalBlockSignal ? (
+              <Brain className="w-6 h-6 text-amber-200 animate-bounce shrink-0" />
+            ) : (
+              <span className="msym text-xl text-amber-300 animate-bounce shrink-0">bolt</span>
+            )}
             <div>
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-200 block">
-                MEMBER SLIDE / STAGE SIGNAL (From {activeSignal.senderName})
+                {isMentalBlockSignal
+                  ? `🧠 MENTAL BLOCK ALERT (From ${activeSignal.senderName})`
+                  : `MEMBER SLIDE / STAGE SIGNAL (From ${activeSignal.senderName})`}
               </span>
               <span className="text-sm font-black text-white">
                 {activeSignal.message}
               </span>
             </div>
           </div>
+
+          {/* Quick Action for Host to Proceed Next directly from signal banner */}
+          {isHost && onNextSpeaker && (
+            <button
+              type="button"
+              onClick={onNextSpeaker}
+              className="px-3.5 py-2 rounded-xl bg-white hover:bg-gray-100 text-gray-900 font-black text-xs transition-all active:scale-95 flex items-center gap-1.5 shrink-0 shadow-md cursor-pointer border border-white/40"
+            >
+              <span>⏩ Proceed to Next Presenter</span>
+              <FastForward className="w-3.5 h-3.5 text-amber-600" />
+            </button>
+          )}
         </div>
       )}
 

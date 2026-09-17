@@ -30,7 +30,7 @@ export interface TimerState {
   hostId: string;
 }
 
-export type StageSignalType = 'wrap_up' | 'speak_louder' | 'next_slide' | 'one_min_left';
+export type StageSignalType = 'wrap_up' | 'speak_louder' | 'next_slide' | 'one_min_left' | 'mental_block';
 
 export interface StageSignal {
   id: string;
