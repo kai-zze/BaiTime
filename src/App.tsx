@@ -289,8 +289,8 @@ export function App() {
           setIsCreateOpen(false);
           setIsWelcomeOpen(true);
         }}
-        onCreateRoom={(rName, tMins, members, hName) => {
-          updateRoomConfiguration(rName, tMins, members);
+        onCreateRoom={(rName, tMins, members, hName, rCode) => {
+          updateRoomConfiguration(rName, tMins, members, rCode);
           if (hName) updateUserName(hName);
           setIsWelcomeOpen(false);
           setIsCreateOpen(false);

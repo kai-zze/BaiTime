@@ -459,6 +459,7 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
     roomName: string,
     totalMins: number,
     speakerConfigs: Array<{ name: string; topic?: string; minutes: number }>,
+    customRoomCode?: string,
   ) => {
     const totalSecs = totalMins * 60;
     const newSpeakers: Speaker[] = speakerConfigs.map((cfg, idx) => ({
@@ -471,8 +472,10 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
     }));
 
     setState((prev) => {
+      const targetCode = customRoomCode ? customRoomCode.trim().toUpperCase() : prev.roomCode;
       const next: TimerState = {
         ...prev,
+        roomCode: targetCode,
         roomName,
         totalDurationSeconds: totalSecs,
         elapsedSeconds: 0,

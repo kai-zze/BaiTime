@@ -15,7 +15,8 @@ interface CreateRoomModalProps {
     roomName: string,
     totalMinutes: number,
     members: Array<{ name: string; topic: string; minutes: number }>,
-    hostName?: string
+    hostName?: string,
+    roomCode?: string
   ) => void;
   onReenterRoom?: (code: string, hostName?: string) => void;
   currentRoomCode?: string;
@@ -39,6 +40,9 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'create' | 'reenter'>('create');
   const [hostName, setHostName] = useState('');
+  const [createRoomCode, setCreateRoomCode] = useState<string>(() => {
+    return currentRoomCode || 'DEF15M';
+  });
   const [roomName, setRoomName] = useState('Capstone Mock Defense');
   const [totalMinutes, setTotalMinutes] = useState<number | string>(15);
   const [members, setMembers] = useState<MemberEntry[]>(DEFAULT_MEMBERS);
@@ -47,6 +51,15 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
   });
 
   if (!isOpen) return null;
+
+  const handleGenerateNewCode = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setCreateRoomCode(code);
+  };
 
   const handleAddMember = () => {
     setMembers((prev) => [
@@ -99,7 +112,8 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
       topic: m.topic.trim(),
       minutes: Math.max(0.5, Number(m.minutes) || 1),
     }));
-    onCreateRoom(roomName.trim(), numTotalMinutes, cleanMembers, cleanHostName);
+    const cleanCode = createRoomCode.trim().toUpperCase() || currentRoomCode || 'DEF15M';
+    onCreateRoom(roomName.trim(), numTotalMinutes, cleanMembers, cleanHostName, cleanCode);
   };
 
   const allocatedTotal = members.reduce((s, m) => s + (Number(m.minutes) || 0), 0);
@@ -214,7 +228,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
               </div>
             ) : (
               <>
-                {/* Host Name + Room title + total time */}
+                {/* Host Name + Room Code + Room title + total time */}
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-purple-500/5 dark:bg-purple-950/20 p-3.5 rounded-2xl border border-purple-500/20">
                   <div className="sm:col-span-2">
                     <label className="block text-[10px] font-black text-purple-700 dark:text-purple-300 uppercase tracking-widest mb-1.5 flex items-center gap-1">
@@ -231,7 +245,33 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
                     />
                   </div>
 
-                  <div>
+                  <div className="sm:col-span-2">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[10px] font-black text-purple-700 dark:text-purple-300 uppercase tracking-widest flex items-center gap-1">
+                        <Key className="w-3.5 h-3.5 text-purple-500" />
+                        <span>6-Character Room Code</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleGenerateNewCode}
+                        className="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer flex items-center gap-1"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        <span>Random Code</span>
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={createRoomCode}
+                      onChange={(e) => setCreateRoomCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                      placeholder="e.g. DEF15M"
+                      maxLength={6}
+                      required
+                      className="w-full bg-white dark:bg-gray-900 border border-purple-300 dark:border-purple-700/80 rounded-xl px-3 py-2 text-base font-mono font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest focus:outline-none focus:border-purple-500 shadow-inner"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-3">
                     <label className="block text-[10px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest mb-1.5">
                       Session Title
                     </label>
