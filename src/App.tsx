@@ -17,11 +17,11 @@ import { Info } from 'lucide-react';
 const STORAGE_KEY_THEME = 'baitime_theme_mode';
 
 export function App() {
-  // Theme state: dark mode (default) vs light mode
+  // Theme state: dark mode vs light mode (default: light mode)
   const [isDark, setIsDark] = useState<boolean>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_THEME);
     if (saved) return saved === 'dark';
-    return true;
+    return false;
   });
 
   useEffect(() => {
@@ -294,10 +294,16 @@ export function App() {
         onCreateRoom={(rName, tMins, members, hName) => {
           updateRoomConfiguration(rName, tMins, members);
           if (hName) updateUserName(hName);
+          setIsWelcomeOpen(false);
+          setIsCreateOpen(false);
+          setIsMemberScreen(false);
         }}
         onReenterRoom={(code, hName) => {
           reenterRoomAsHost(code);
           if (hName) updateUserName(hName);
+          setIsWelcomeOpen(false);
+          setIsCreateOpen(false);
+          setIsMemberScreen(false);
         }}
         currentRoomCode={state.roomCode}
         currentHostName={userName}

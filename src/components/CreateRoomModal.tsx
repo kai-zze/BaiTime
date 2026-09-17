@@ -89,13 +89,11 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
     if (activeTab === 'reenter') {
       if (!reenterCode.trim()) return;
       if (onReenterRoom) onReenterRoom(reenterCode.trim(), cleanHostName);
-      onClose();
       return;
     }
 
     if (!roomName.trim()) return;
     onCreateRoom(roomName.trim(), totalMinutes, members, cleanHostName);
-    onClose();
   };
 
   const allocatedTotal = members.reduce((s, m) => s + (Number(m.minutes) || 0), 0);
