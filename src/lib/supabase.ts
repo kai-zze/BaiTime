@@ -53,7 +53,15 @@ export class RoomSyncService {
         .on('broadcast', { event: 'request-state' }, () => {
           if (onRequestState) onRequestState();
         })
-        .subscribe();
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED' && this.channel) {
+            this.channel.send({
+              type: 'broadcast',
+              event: 'request-state',
+              payload: {},
+            });
+          }
+        });
     }
 
     // Listen to local BroadcastChannel as fallback

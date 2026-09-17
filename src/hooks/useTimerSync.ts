@@ -461,7 +461,8 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
         hostId: tabId, // Current tab is host
         lastUpdated: Date.now(),
       };
-      localStorage.setItem("baitime_last_created_room", prev.roomCode);
+      localStorage.setItem("baitime_last_created_room", next.roomCode);
+      localStorage.setItem(`baitime_room_state_${next.roomCode}`, JSON.stringify(next));
       broadcastState(next);
       return next;
     });
@@ -470,7 +471,31 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
   const reenterRoomAsHost = (code: string) => {
     const upperCode = code.trim().toUpperCase();
     localStorage.setItem("baitime_last_created_room", upperCode);
+
+    let cachedState: TimerState | null = null;
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`baitime_room_state_${upperCode}`);
+      if (saved) {
+        try {
+          cachedState = JSON.parse(saved);
+        } catch {
+          // Fallback
+        }
+      }
+    }
+
     setState((prev) => {
+      if (cachedState && Array.isArray(cachedState.speakers) && cachedState.speakers.length > 0) {
+        const next: TimerState = {
+          ...cachedState,
+          roomCode: upperCode,
+          hostId: tabId,
+          lastUpdated: Date.now(),
+        };
+        broadcastState(next);
+        return next;
+      }
+
       const next: TimerState = {
         ...prev,
         roomCode: upperCode,
