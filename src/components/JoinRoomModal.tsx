@@ -1,6 +1,11 @@
-import React, { useState } from 'react';
-import { X, LogIn, Key, User, ArrowLeft, Users } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, LogIn, Key, User, ArrowLeft, Users, Check } from 'lucide-react';
 import { RoomSyncService } from '../lib/supabase';
+
+interface SpeakerItem {
+  name: string;
+  topic?: string;
+}
 
 interface JoinRoomModalProps {
   isOpen: boolean;
@@ -21,14 +26,16 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
   availableSpeakers = [],
 }) => {
   const [roomCode, setRoomCode] = useState('');
-  const [userName, setUserName] = useState('');
-  const [liveSpeakers, setLiveSpeakers] = useState<string[]>([]);
+  const [selectedName, setSelectedName] = useState('');
+  const [customName, setCustomName] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [liveSpeakers, setLiveSpeakers] = useState<SpeakerItem[]>([]);
 
   const cleanRoomCode = roomCode.trim().toUpperCase();
   const isRoomCodeTyped = cleanRoomCode.length > 0;
 
-  // Real-time lookup of host speaker roster when member types room code
-  React.useEffect(() => {
+  // Listen live to host room state when member types room code
+  useEffect(() => {
     if (!isOpen || cleanRoomCode.length < 3) {
       setLiveSpeakers([]);
       return;
@@ -38,9 +45,12 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
     syncService.subscribe(
       (incomingState: any) => {
         if (incomingState && Array.isArray(incomingState.speakers)) {
-          const names = incomingState.speakers.map((s: { name: string }) => s.name);
-          if (names.length > 0) {
-            setLiveSpeakers(names);
+          const items: SpeakerItem[] = incomingState.speakers.map((s: any) => ({
+            name: s.name,
+            topic: s.topic,
+          }));
+          if (items.length > 0) {
+            setLiveSpeakers(items);
           }
         }
       },
@@ -58,29 +68,26 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!cleanRoomCode) return;
-    onJoinRoom(cleanRoomCode, userName.trim() || 'Teammate');
-  };
-
-  // Dynamically resolve roster for the typed room code
-  const getSpeakersForTypedRoom = (): string[] => {
+  // Resolve speakers roster for typed room code
+  const getSpeakersForTypedRoom = (): SpeakerItem[] => {
     if (!isRoomCodeTyped) return [];
 
-    // 1. Live speakers received from host channel
+    // 1. Live speakers received from host real-time channel
     if (liveSpeakers.length > 0) {
       return liveSpeakers;
     }
 
-    // 2. Try cached room state from localStorage for typed room code
+    // 2. Try cached room state from localStorage
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(`baitime_room_state_${cleanRoomCode}`);
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
           if (parsed && Array.isArray(parsed.speakers) && parsed.speakers.length > 0) {
-            return parsed.speakers.map((s: { name: string }) => s.name);
+            return parsed.speakers.map((s: any) => ({
+              name: s.name,
+              topic: s.topic,
+            }));
           }
         } catch {
           // Fallback
@@ -90,18 +97,30 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
 
     // 3. Fallback to availableSpeakers prop
     if (currentRoomCode && cleanRoomCode === currentRoomCode.trim().toUpperCase() && availableSpeakers.length > 0) {
-      return availableSpeakers;
+      return availableSpeakers.map((n) => ({ name: n }));
     }
 
-    // 4. Return empty array while loading live host state (never show fake names!)
     return [];
   };
 
   const activeRoster = getSpeakersForTypedRoom();
 
+  const handleSelectAndJoin = (nameToJoin: string) => {
+    if (!cleanRoomCode) return;
+    onJoinRoom(cleanRoomCode, nameToJoin.trim() || 'Teammate');
+  };
+
+  const handleCustomSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const targetName = showCustomInput ? customName : selectedName;
+    if (!cleanRoomCode || !targetName.trim()) return;
+    onJoinRoom(cleanRoomCode, targetName.trim());
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
       <div className="w-full max-w-md flat-panel rounded-2xl border border-gray-200 dark:border-gray-800 p-6 overflow-hidden transition-colors shadow-2xl animate-modal-pop">
+        
         {/* Header */}
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200 dark:border-gray-700/80">
           <div className="flex items-center gap-2.5">
@@ -109,7 +128,7 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
               <button
                 type="button"
                 onClick={onBackToWelcome}
-                className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                 title="Back to Role Chooser"
               >
                 <ArrowLeft className="w-5 h-5 text-indigo-500" />
@@ -120,19 +139,22 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
             </div>
             <div>
               <h2 className="text-base font-black text-gray-900 dark:text-white tracking-tight">Join Presentation Room</h2>
-              <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Sync timer live with your capstone team</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Select your name to sync timer live</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Body */}
+        <div className="space-y-4">
+          
+          {/* Step 1: 6-Character Room Code */}
           <div>
             <label className="block text-xs font-black text-gray-800 dark:text-gray-200 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
               <Key className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
@@ -141,7 +163,10 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
             <input
               type="text"
               value={roomCode}
-              onChange={(e) => setRoomCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+              onChange={(e) => {
+                setRoomCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''));
+                setSelectedName('');
+              }}
               placeholder="e.g. DEF15M"
               maxLength={8}
               required
@@ -150,74 +175,104 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
             {!isRoomCodeTyped && (
               <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium italic mt-1.5 flex items-center gap-1">
                 <Key className="w-3 h-3 text-indigo-400 shrink-0" />
-                <span>Type room code above to reveal host roster</span>
+                <span>Type 6-character room code above to load host roster</span>
               </p>
             )}
           </div>
 
-          <div>
-            <label className="block text-xs font-black text-gray-800 dark:text-gray-200 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-              Your Name / Role
-            </label>
-            <input
-              type="text"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              placeholder="e.g. Presenter Name"
-              required
-              className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-indigo-500"
-            />
-
-            {/* Quick Pick Speaker Chips Configured by Host — ONLY APPEARS WHEN ROOM CODE IS TYPED */}
-            {isRoomCodeTyped && (
-              <div className="mt-3 p-3 bg-indigo-500/10 dark:bg-indigo-950/40 border border-indigo-500/30 rounded-xl space-y-2 animate-fade-in">
-                <label className="block text-[11px] font-black text-indigo-700 dark:text-indigo-300 flex items-center justify-between uppercase tracking-wider">
-                  <span className="flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                    Select your name from host roster:
-                  </span>
-                  {activeRoster.length === 0 && (
-                    <span className="text-[10px] font-mono font-bold text-amber-500 animate-pulse">
-                      Connecting...
-                    </span>
-                  )}
+          {/* Step 2: Directly Select Name from Host Roster */}
+          {isRoomCodeTyped && (
+            <div className="p-3.5 bg-indigo-500/10 dark:bg-indigo-950/40 border border-indigo-500/30 rounded-2xl space-y-3 animate-fade-in">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black text-indigo-700 dark:text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-indigo-500 shrink-0" />
+                  Select Your Name:
                 </label>
-
-                {activeRoster.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5 pt-0.5">
-                    {activeRoster.map((spName) => (
-                      <button
-                        key={spName}
-                        type="button"
-                        onClick={() => setUserName(spName)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer active:scale-95 flex items-center gap-1 ${
-                          userName === spName
-                            ? 'bg-indigo-600 text-white border-indigo-500 shadow-md ring-2 ring-indigo-400/50'
-                            : 'bg-white dark:bg-gray-800 text-indigo-900 dark:text-indigo-200 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/60'
-                        }`}
-                      >
-                        <span>{spName}</span>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium italic pt-1">
-                    Fetching host roster... or enter your name above.
-                  </p>
+                {activeRoster.length === 0 && (
+                  <span className="text-[10px] font-mono font-bold text-amber-500 animate-pulse">
+                    Connecting to host...
+                  </span>
                 )}
               </div>
-            )}
-          </div>
 
-          <button
-            type="submit"
-            className="w-full py-3.5 mt-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black rounded-xl transition-all active:scale-98 shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <LogIn className="w-5 h-5" />
-            <span>Join Room & Start Live Sync</span>
-          </button>
-        </form>
+              {activeRoster.length > 0 ? (
+                <div className="grid grid-cols-1 gap-2 max-h-[220px] overflow-y-auto pr-0.5">
+                  {activeRoster.map((sp) => {
+                    const isSelected = selectedName === sp.name;
+                    return (
+                      <button
+                        key={sp.name}
+                        type="button"
+                        onClick={() => {
+                          setSelectedName(sp.name);
+                          handleSelectAndJoin(sp.name);
+                        }}
+                        className={`w-full p-3 rounded-xl text-left transition-all border cursor-pointer flex items-center justify-between gap-2 active:scale-98 ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg ring-2 ring-indigo-400/50'
+                            : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-200 dark:border-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/50'
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <User className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-white' : 'text-indigo-500'}`} />
+                            <span className="font-extrabold text-sm truncate">{sp.name}</span>
+                          </div>
+                          {sp.topic && (
+                            <span className={`text-[11px] font-semibold block truncate mt-0.5 ${isSelected ? 'text-indigo-100' : 'text-purple-600 dark:text-purple-300'}`}>
+                              📋 {sp.topic}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shrink-0 flex items-center gap-1 ${
+                          isSelected ? 'bg-white/20 text-white' : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                        }`}>
+                          <span>Tap to Join</span>
+                          {isSelected && <Check className="w-3 h-3 text-white" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-3 text-center text-xs text-gray-500 dark:text-gray-400 italic">
+                  Fetching host speaker roster... If host is ready, names will pop up here!
+                </div>
+              )}
+
+              {/* Optional Custom Name Toggle */}
+              <div className="pt-2 border-t border-indigo-200/60 dark:border-indigo-900/60 text-center">
+                {!showCustomInput ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomInput(true)}
+                    className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                  >
+                    + Name not listed? Type custom name
+                  </button>
+                ) : (
+                  <form onSubmit={handleCustomSubmit} className="space-y-2 pt-1">
+                    <input
+                      type="text"
+                      value={customName}
+                      onChange={(e) => setCustomName(e.target.value)}
+                      placeholder="Type your custom name..."
+                      className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!customName.trim()}
+                      className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black disabled:opacity-40 cursor-pointer"
+                    >
+                      Join as {customName.trim() || 'Custom Presenter'}
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
