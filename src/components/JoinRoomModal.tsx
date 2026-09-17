@@ -16,22 +16,11 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
   onClose,
   onBackToWelcome,
   onJoinRoom,
-  currentUserName,
   currentRoomCode = '',
   availableSpeakers = [],
 }) => {
-  const [roomCode, setRoomCode] = useState(currentRoomCode);
-  const [userName, setUserName] = useState(currentUserName);
-
-  // Sync state when modal opens or props change
-  React.useEffect(() => {
-    if (isOpen) {
-      if (currentRoomCode && !roomCode) {
-        setRoomCode(currentRoomCode);
-      }
-      setUserName(currentUserName);
-    }
-  }, [isOpen, currentRoomCode, currentUserName]);
+  const [roomCode, setRoomCode] = useState('');
+  const [userName, setUserName] = useState('');
 
   if (!isOpen) return null;
 
