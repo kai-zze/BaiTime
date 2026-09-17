@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, LogIn, Key, User, ArrowLeft, Users, Check } from 'lucide-react';
+import { X, LogIn, Key, User, ArrowLeft, Users, Check, RefreshCw } from 'lucide-react';
 import { RoomSyncService } from '../lib/supabase';
 
 interface SpeakerItem {
@@ -22,8 +22,6 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
   onClose,
   onBackToWelcome,
   onJoinRoom,
-  currentRoomCode = '',
-  availableSpeakers = [],
 }) => {
   const [roomCode, setRoomCode] = useState('');
   const [selectedName, setSelectedName] = useState('');
@@ -59,14 +57,16 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
       () => {}
     );
 
-    // Request state immediately and retry after short delay to ensure channel is ready
+    // Multi-stage retries to guarantee WebSocket delivery across mobile devices
     syncService.broadcastRequestState();
-    const timer = setTimeout(() => {
-      syncService.broadcastRequestState();
-    }, 300);
+    const t1 = setTimeout(() => syncService.broadcastRequestState(), 300);
+    const t2 = setTimeout(() => syncService.broadcastRequestState(), 800);
+    const t3 = setTimeout(() => syncService.broadcastRequestState(), 1500);
 
     return () => {
-      clearTimeout(timer);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
       syncService.unsubscribe();
     };
   }, [isOpen, cleanRoomCode]);
@@ -75,14 +75,14 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
 
   // Resolve speakers roster for typed room code
   const getSpeakersForTypedRoom = (): SpeakerItem[] => {
-    if (!isRoomCodeTyped) return [];
+    if (!isRoomCodeTyped || cleanRoomCode.length < 3) return [];
 
     // 1. Live speakers received from host real-time channel
     if (liveSpeakers.length > 0) {
       return liveSpeakers;
     }
 
-    // 2. Try cached room state from localStorage
+    // 2. Try cached room state from localStorage (if host created on same device/browser)
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(`baitime_room_state_${cleanRoomCode}`);
       if (saved) {
@@ -100,18 +100,8 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
       }
     }
 
-    // 3. Fallback to availableSpeakers prop
-    if (currentRoomCode && cleanRoomCode === currentRoomCode.trim().toUpperCase() && availableSpeakers.length > 0) {
-      return availableSpeakers.map((n) => ({ name: n }));
-    }
-
-    // 4. Instant fallback roster cards while live channel connects
-    return [
-      { name: 'Member 1', topic: 'Introduction & Problem Statement' },
-      { name: 'Member 2', topic: 'System Architecture & Methodology' },
-      { name: 'Member 3', topic: 'Live Feature Demo & Implementation' },
-      { name: 'Member 4', topic: 'Results, Conclusion & Defense Q&A' },
-    ];
+    // Return empty array while waiting for live host response (do NOT populate fake Member 1..4)
+    return [];
   };
 
   const activeRoster = getSpeakersForTypedRoom();
@@ -252,8 +242,31 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                   })}
                 </div>
               ) : (
-                <div className="p-3 text-center text-xs text-gray-500 dark:text-gray-400 italic">
-                  Fetching host speaker roster... If host is ready, names will pop up here!
+                <div className="p-4 bg-white/60 dark:bg-gray-900/60 rounded-xl border border-dashed border-indigo-300 dark:border-indigo-700/60 text-center space-y-2">
+                  <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-500/10 text-indigo-500 animate-spin">
+                    <RefreshCw className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                      Syncing Host Roster for Room <span className="font-mono text-indigo-600 dark:text-indigo-400 font-black">{cleanRoomCode || '...'}</span>
+                    </p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+                      If the host has created this room, their custom names will pop up automatically.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (cleanRoomCode) {
+                        const syncService = new RoomSyncService(cleanRoomCode);
+                        syncService.broadcastRequestState();
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-black rounded-lg transition-all active:scale-95 cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>Re-sync Host Roster</span>
+                  </button>
                 </div>
               )}
 

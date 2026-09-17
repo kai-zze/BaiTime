@@ -211,6 +211,16 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
         // Response when a viewer requests state update
         if (stateRef.current.hostId === tabId) {
           syncService.broadcastState(stateRef.current);
+          setTimeout(() => {
+            if (syncServiceRef.current) {
+              syncServiceRef.current.broadcastState(stateRef.current);
+            }
+          }, 150);
+          setTimeout(() => {
+            if (syncServiceRef.current) {
+              syncServiceRef.current.broadcastState(stateRef.current);
+            }
+          }, 400);
         }
       }
     );
