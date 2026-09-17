@@ -4,7 +4,7 @@ import { X, Plus, Trash2, Clock, Users, Sparkles, ArrowLeft, Key, User } from 'l
 interface MemberEntry {
   name: string;
   topic: string;
-  minutes: number;
+  minutes: number | string;
 }
 
 interface CreateRoomModalProps {
@@ -41,7 +41,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
   const [activeTab, setActiveTab] = useState<'create' | 'reenter'>('create');
   const [hostName, setHostName] = useState(currentHostName);
   const [roomName, setRoomName] = useState('Capstone Mock Defense');
-  const [totalMinutes, setTotalMinutes] = useState(15);
+  const [totalMinutes, setTotalMinutes] = useState<number | string>(15);
   const [members, setMembers] = useState<MemberEntry[]>(DEFAULT_MEMBERS);
   const [reenterCode, setReenterCode] = useState<string>(() => {
     return localStorage.getItem('baitime_last_created_room') || currentRoomCode || '';
@@ -79,7 +79,8 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
 
   const handleSplitEvenly = () => {
     if (!members.length) return;
-    const split = Number((totalMinutes / members.length).toFixed(1));
+    const numTotal = Number(totalMinutes) || 15;
+    const split = Number((numTotal / members.length).toFixed(1));
     setMembers((prev) => prev.map((m) => ({ ...m, minutes: split })));
   };
 
@@ -93,11 +94,18 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
     }
 
     if (!roomName.trim()) return;
-    onCreateRoom(roomName.trim(), totalMinutes, members, cleanHostName);
+    const numTotalMinutes = Math.max(1, Number(totalMinutes) || 15);
+    const cleanMembers = members.map((m) => ({
+      name: m.name.trim() || 'Speaker',
+      topic: m.topic.trim(),
+      minutes: Math.max(0.5, Number(m.minutes) || 1),
+    }));
+    onCreateRoom(roomName.trim(), numTotalMinutes, cleanMembers, cleanHostName);
   };
 
   const allocatedTotal = members.reduce((s, m) => s + (Number(m.minutes) || 0), 0);
-  const isMismatch = Math.abs(allocatedTotal - totalMinutes) > 0.1;
+  const numTotalMins = Number(totalMinutes) || 15;
+  const isMismatch = Math.abs(allocatedTotal - numTotalMins) > 0.1;
 
   return (
     <div className="fixed inset-0 z-50 w-full h-full min-h-screen bg-slate-50 text-gray-900 dark:bg-[#0B132B] dark:text-white flex flex-col justify-between overflow-hidden transition-colors duration-200">
@@ -238,9 +246,17 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
                     <input
                       type="number"
                       min="1"
-                      max="120"
+                      max="180"
                       value={totalMinutes}
-                      onChange={(e) => setTotalMinutes(Math.max(1, Number(e.target.value)))}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setTotalMinutes(val === '' ? '' : Math.max(0, Number(val)));
+                      }}
+                      onBlur={() => {
+                        if (totalMinutes === '' || Number(totalMinutes) < 1) {
+                          setTotalMinutes(15);
+                        }
+                      }}
                       className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm font-mono font-black text-purple-600 dark:text-purple-400 text-center focus:outline-none focus:border-purple-500"
                     />
                   </div>
@@ -260,7 +276,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
                     className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[11px] font-black border border-purple-500/30 hover:bg-purple-500/20 transition-colors cursor-pointer"
                   >
                     <Sparkles className="w-3 h-3" />
-                    Split evenly ({Number((totalMinutes / Math.max(members.length, 1)).toFixed(1))}m)
+                    Split evenly ({Number((numTotalMins / Math.max(members.length, 1)).toFixed(1))}m)
                   </button>
                 </div>
 
@@ -287,11 +303,19 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
                             <input
                               type="number"
                               step="0.5"
-                              min="0.5"
-                              max={totalMinutes}
+                              min="0.1"
+                              max="180"
                               value={m.minutes}
-                              onChange={(e) => handleChange(i, 'minutes', Math.max(0.5, Number(e.target.value)))}
-                              className="w-10 bg-transparent text-xs font-mono font-black text-center text-purple-600 dark:text-purple-400 focus:outline-none"
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                handleChange(i, 'minutes', val === '' ? '' : Math.max(0, Number(val)));
+                              }}
+                              onBlur={() => {
+                                if (m.minutes === '' || Number(m.minutes) <= 0) {
+                                  handleChange(i, 'minutes', 3);
+                                }
+                              }}
+                              className="w-12 bg-transparent text-xs font-mono font-black text-center text-purple-600 dark:text-purple-400 focus:outline-none"
                             />
                             <span className="text-[10px] font-mono font-bold text-purple-600 dark:text-purple-400">min</span>
                           </div>
