@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, LogIn, Key, User, ArrowLeft, Users, Check, RefreshCw } from 'lucide-react';
-import { RoomSyncService } from '../lib/supabase';
+import { RoomSyncService, supabase } from '../lib/supabase';
 
 interface SpeakerItem {
   name: string;
@@ -28,17 +28,48 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
   const [customName, setCustomName] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [liveSpeakers, setLiveSpeakers] = useState<SpeakerItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const cleanRoomCode = roomCode.trim().toUpperCase();
   const isRoomCodeTyped = cleanRoomCode.length > 0;
 
-  // Pre-connect WebSocket at 3+ characters for instant roster syncing on 6th char
+  // Directly fetch from Supabase DB when a complete 6-char room code is entered
   useEffect(() => {
-    if (!isOpen || cleanRoomCode.length < 3) {
-      setLiveSpeakers([]);
+    if (!isOpen || cleanRoomCode.length < 6) {
+      if (cleanRoomCode.length < 6) setLiveSpeakers([]);
       return;
     }
 
+    setIsLoading(true);
+
+    // 1. Direct DB fetch (works across ANY device, any network, no WebSocket needed)
+    const fetchFromDB = async () => {
+      try {
+        if (!supabase) return false;
+        const { data, error } = await supabase
+          .from('rooms')
+          .select('state')
+          .eq('code', cleanRoomCode)
+          .maybeSingle();
+
+        if (!error && data && data.state && Array.isArray(data.state.speakers)) {
+          const items: SpeakerItem[] = data.state.speakers.map((s: any) => ({
+            name: s.name,
+            topic: s.topic,
+          }));
+          if (items.length > 0) {
+            setLiveSpeakers(items);
+            setIsLoading(false);
+            return true;
+          }
+        }
+      } catch {
+        // Supabase table may not exist yet, fall through to WebSocket
+      }
+      return false;
+    };
+
+    // 2. WebSocket subscription for live updates after host changes state
     const syncService = new RoomSyncService(cleanRoomCode);
     syncService.subscribe(
       (incomingState: any) => {
@@ -49,6 +80,7 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
           }));
           if (items.length > 0) {
             setLiveSpeakers(items);
+            setIsLoading(false);
           }
         }
       },
@@ -57,20 +89,17 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
       () => {}
     );
 
-    // If room code reaches 6 characters, request state immediately and with fast retries
-    if (cleanRoomCode.length >= 6) {
-      syncService.broadcastRequestState();
-      const t1 = setTimeout(() => syncService.broadcastRequestState(), 100);
-      const t2 = setTimeout(() => syncService.broadcastRequestState(), 400);
-      const t3 = setTimeout(() => syncService.broadcastRequestState(), 1000);
-
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-        syncService.unsubscribe();
-      };
-    }
+    // Try DB first, then fall back to WebSocket request
+    fetchFromDB().then((found) => {
+      if (!found) {
+        // Retry WebSocket requests since DB had no data (host might not have saved yet)
+        syncService.broadcastRequestState();
+        const t1 = setTimeout(() => syncService.broadcastRequestState(), 300);
+        const t2 = setTimeout(() => syncService.broadcastRequestState(), 800);
+        const t3 = setTimeout(() => { syncService.broadcastRequestState(); setIsLoading(false); }, 2000);
+        return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+      }
+    });
 
     return () => {
       syncService.unsubscribe();
@@ -254,25 +283,53 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                   </div>
                   <div>
                     <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                      Syncing Host Roster for Room <span className="font-mono text-indigo-600 dark:text-indigo-400 font-black">{cleanRoomCode || '...'}</span>
+                      {cleanRoomCode.length < 6
+                        ? 'Type the full 6-character room code'
+                        : <>Syncing Host Roster for Room <span className="font-mono text-indigo-600 dark:text-indigo-400 font-black">{cleanRoomCode}</span></>
+                      }
                     </p>
                     <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
-                      If the host has created this room, their custom names will pop up automatically.
+                      {cleanRoomCode.length >= 6
+                        ? 'If the host has created this room, their custom names will pop up automatically.'
+                        : 'Ask your host for the 6-character room code.'}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (cleanRoomCode) {
-                        const syncService = new RoomSyncService(cleanRoomCode);
-                        syncService.broadcastRequestState();
-                      }
-                    }}
-                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-black rounded-lg transition-all active:scale-95 cursor-pointer shadow-xs inline-flex items-center gap-1.5"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    <span>Re-sync Host Roster</span>
-                  </button>
+                  {cleanRoomCode.length >= 6 && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!cleanRoomCode) return;
+                        setIsLoading(true);
+                        try {
+                          if (supabase) {
+                            const { data } = await supabase.from('rooms').select('state').eq('code', cleanRoomCode).maybeSingle();
+                            if (data && data.state?.speakers?.length > 0) {
+                              setLiveSpeakers(data.state.speakers.map((s: any) => ({ name: s.name, topic: s.topic })));
+                              setIsLoading(false);
+                              return;
+                            }
+                          }
+                        } catch { /* fallback */ }
+                        const svc = new RoomSyncService(cleanRoomCode);
+                        svc.subscribe(
+                          (st: any) => {
+                            if (st?.speakers?.length > 0) {
+                              setLiveSpeakers(st.speakers.map((s: any) => ({ name: s.name, topic: s.topic })));
+                              setIsLoading(false);
+                              svc.unsubscribe();
+                            }
+                          },
+                          () => {}, () => {}, () => {}
+                        );
+                        svc.broadcastRequestState();
+                        setTimeout(() => { setIsLoading(false); svc.unsubscribe(); }, 3000);
+                      }}
+                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-black rounded-lg transition-all active:scale-95 cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
+                      <span>{isLoading ? 'Syncing...' : 'Re-sync Host Roster'}</span>
+                    </button>
+                  )}
                 </div>
               )}
 
