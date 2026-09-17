@@ -19,6 +19,7 @@ import {
   Lock,
   Brain,
   FastForward,
+  ClipboardList,
 } from 'lucide-react';
 
 interface MemberScreenProps {
@@ -117,8 +118,8 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
       triggerToast(`Locked: Only ${currentSpeaker?.name || 'Active Presenter'} can change slides`);
       return;
     }
-    onSendSignal('next_slide', `${userName} requested NEXT PPT SLIDE ➔`);
-    triggerToast(`Next PPT Slide Signal Sent to Host! ➔`);
+    onSendSignal('next_slide', `${userName} requested Next Slide`);
+    triggerToast(`Next Slide Signal Sent to Host!`);
   };
 
   const handlePrevSlide = () => {
@@ -126,16 +127,16 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
       triggerToast(`Locked: Only ${currentSpeaker?.name || 'Active Presenter'} can change slides`);
       return;
     }
-    onSendSignal('next_slide', `${userName} requested PREVIOUS PPT SLIDE ⬅`);
-    triggerToast(`Previous PPT Slide Signal Sent to Host! ⬅`);
+    onSendSignal('next_slide', `${userName} requested Previous Slide`);
+    triggerToast(`Previous Slide Signal Sent to Host!`);
   };
 
   const handleMentalBlock = () => {
     const msg = isCurrentPresenter
-      ? `🧠 MENTAL BLOCK ALERT! Presenter ${userName} hit a mental block — please proceed to the Next Presenter!`
-      : `🧠 MENTAL BLOCK REMINDER! ${userName} requested to proceed to the Next Presenter!`;
+      ? `MENTAL BLOCK ALERT: Presenter ${userName} hit a mental block — please proceed to Next Presenter`
+      : `MENTAL BLOCK REMINDER: ${userName} requested to proceed to Next Presenter`;
     onSendSignal('mental_block', msg);
-    triggerToast(`🧠 Mental Block alert sent to Host! Reminded to proceed to Next Presenter.`);
+    triggerToast(`Mental Block alert sent to Host! Reminded to proceed to Next Presenter.`);
   };
 
   const handleExitClick = () => {
@@ -249,7 +250,7 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
                 </h2>
                 {currentSpeaker.topic && (
                   <div className="mt-2.5 inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-indigo-500/10 dark:bg-indigo-950/60 border border-indigo-500/30 text-indigo-600 dark:text-indigo-300 text-xs sm:text-sm font-extrabold shadow-xs">
-                    <span>📋</span>
+                    <ClipboardList className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                     <span>Reporting Topic: <strong>{currentSpeaker.topic}</strong></span>
                   </div>
                 )}
@@ -291,7 +292,7 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
                     title="Remind host to proceed to next presenter due to mental block"
                   >
                     <Brain className="w-3.5 h-3.5 animate-bounce" />
-                    <span>🧠 Mental Block — Proceed Next</span>
+                    <span>Mental Block — Proceed Next</span>
                   </button>
                 </div>
               </div>
@@ -369,7 +370,7 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
                 title="Press if stuck or mental block to remind host to proceed to next presenter"
               >
                 <Brain className="w-4.5 h-4.5 shrink-0 animate-bounce" />
-                <span>🧠 MENTAL BLOCK — REMIND HOST TO PROCEED NEXT</span>
+                <span>MENTAL BLOCK — REMIND HOST TO PROCEED NEXT</span>
                 <FastForward className="w-4.5 h-4.5 shrink-0" />
               </button>
             </div>
@@ -379,7 +380,7 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
           <div className="bg-white dark:bg-[#111C38] rounded-2xl p-4 border border-gray-200/80 dark:border-indigo-900/60 shadow-xl shadow-indigo-950/10 dark:shadow-black/40">
             <div className="flex items-center justify-between pb-2 mb-3 border-b border-gray-200 dark:border-gray-800">
               <div className="flex items-center gap-2">
-                <span className="text-base">📋</span>
+                <ClipboardList className="w-4 h-4 text-[#FF5B00] shrink-0" />
                 <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 dark:text-white">
                   Presentation Topics & Speaker Schedule
                 </h3>
@@ -426,8 +427,9 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
                           {sp.name}
                         </span>
                         {sp.topic && (
-                          <span className="text-[11px] font-semibold text-purple-700 dark:text-purple-300 block truncate mt-0.5">
-                            📋 {sp.topic}
+                          <span className="text-[11px] font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-1 truncate mt-0.5">
+                            <ClipboardList className="w-3 h-3 text-purple-500 shrink-0" />
+                            <span>{sp.topic}</span>
                           </span>
                         )}
                       </div>
@@ -474,7 +476,7 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
                         <span>{msg.text.replace(/^SIGNAL SENT:\s*/i, '')}</span>
                       </div>
                       <span className="text-[9px] text-gray-500 font-mono mt-0.5">
-                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(msg.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                       </span>
                     </div>
                   );
@@ -485,7 +487,7 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
                     {isMe ? (
                       <div className="flex items-center gap-1.5 mb-1 px-1 justify-end">
                         <span className="text-[9px] text-gray-400 dark:text-gray-500 font-mono">
-                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(msg.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                         </span>
                         <span className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400">
                           {msg.senderName || userName} (You)
@@ -501,7 +503,7 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
                         </div>
                         <span className="text-[10px] font-extrabold text-gray-700 dark:text-gray-300">{msg.senderName}</span>
                         <span className="text-[9px] text-gray-400 dark:text-gray-500 font-mono">
-                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(msg.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                         </span>
                       </div>
                     )}

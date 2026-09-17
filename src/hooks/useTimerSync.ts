@@ -143,6 +143,23 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
   // Is current browser tab session the master host?
   const isHost = state.hostId === tabId;
 
+  // Reload room-specific chat & clear active signal whenever state.roomCode changes
+  useEffect(() => {
+    setActiveSignal(null);
+    if (typeof window !== 'undefined' && state.roomCode) {
+      const saved = localStorage.getItem(`baitime_chat_${state.roomCode}`);
+      if (saved) {
+        try {
+          setChatMessages(JSON.parse(saved));
+          return;
+        } catch {
+          // Fallback
+        }
+      }
+    }
+    setChatMessages([]);
+  }, [state.roomCode]);
+
   // Persist recent room chat history to localStorage
   useEffect(() => {
     if (typeof window !== 'undefined' && state.roomCode) {

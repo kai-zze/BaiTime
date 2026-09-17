@@ -1,5 +1,5 @@
 import type { TimerState, StageSignal } from '../types/timer';
-import { Clock, User, TrendingDown, Brain, FastForward } from 'lucide-react';
+import { Clock, User, TrendingDown, Brain, FastForward, ClipboardList, Zap } from 'lucide-react';
 
 interface MasterTimerProps {
   state: TimerState;
@@ -103,12 +103,12 @@ export const MasterTimer: React.FC<MasterTimerProps> = ({ state, activeSignal, o
             {isMentalBlockSignal ? (
               <Brain className="w-6 h-6 text-amber-200 animate-bounce shrink-0" />
             ) : (
-              <span className="msym text-xl text-amber-300 animate-bounce shrink-0">bolt</span>
+              <Zap className="w-5 h-5 text-amber-300 animate-bounce shrink-0" />
             )}
             <div>
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-200 block">
                 {isMentalBlockSignal
-                  ? `🧠 MENTAL BLOCK ALERT (From ${activeSignal.senderName})`
+                  ? `MENTAL BLOCK ALERT (From ${activeSignal.senderName})`
                   : `MEMBER SLIDE / STAGE SIGNAL (From ${activeSignal.senderName})`}
               </span>
               <span className="text-sm font-black text-white">
@@ -124,7 +124,7 @@ export const MasterTimer: React.FC<MasterTimerProps> = ({ state, activeSignal, o
               onClick={onNextSpeaker}
               className="px-3.5 py-2 rounded-xl bg-white hover:bg-gray-100 text-gray-900 font-black text-xs transition-all active:scale-95 flex items-center gap-1.5 shrink-0 shadow-md cursor-pointer border border-white/40"
             >
-              <span>⏩ Proceed to Next Presenter</span>
+              <span>Proceed to Next Presenter</span>
               <FastForward className="w-3.5 h-3.5 text-amber-600" />
             </button>
           )}
@@ -205,7 +205,7 @@ export const MasterTimer: React.FC<MasterTimerProps> = ({ state, activeSignal, o
             </h3>
             {currentSpeaker.topic && (
               <span className="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-300 mt-1.5 flex items-center gap-1.5 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/30">
-                <span>📋</span>
+                <ClipboardList className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                 <span>Topic: {currentSpeaker.topic}</span>
               </span>
             )}

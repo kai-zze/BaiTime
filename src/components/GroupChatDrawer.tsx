@@ -173,7 +173,7 @@ export const GroupChatDrawer: React.FC<GroupChatDrawerProps> = ({
                       <span>{cleanedText}</span>
                     </div>
                     <span className="text-[9px] text-gray-400 dark:text-gray-500 font-mono mt-1">
-                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(msg.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                     </span>
                   </div>
                 );
@@ -184,7 +184,7 @@ export const GroupChatDrawer: React.FC<GroupChatDrawerProps> = ({
                   {isMe ? (
                     <div className="flex items-center gap-1.5 mb-1 px-1 justify-end">
                       <span className="text-[9px] text-gray-400 dark:text-gray-500 font-mono">
-                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(msg.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                       </span>
                       <span className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400">
                         {msg.senderName || userName} (You)
@@ -200,7 +200,7 @@ export const GroupChatDrawer: React.FC<GroupChatDrawerProps> = ({
                       </div>
                       <span className="text-[10px] font-extrabold text-gray-700 dark:text-gray-300">{msg.senderName}</span>
                       <span className="text-[9px] text-gray-400 dark:text-gray-500 font-mono">
-                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(msg.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                       </span>
                     </div>
                   )}

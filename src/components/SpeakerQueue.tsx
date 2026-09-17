@@ -1,5 +1,5 @@
 import type { Speaker } from '../types/timer';
-import { CheckCircle2, Mic, Clock, ArrowRight, CheckCheck } from 'lucide-react';
+import { CheckCircle2, Mic, Clock, ArrowRight, CheckCheck, ClipboardList } from 'lucide-react';
 
 interface SpeakerQueueProps {
   speakers: Speaker[];
@@ -106,7 +106,7 @@ export const SpeakerQueue: React.FC<SpeakerQueueProps> = ({
                 </h3>
                 {speaker.topic && (
                   <div className="text-xs font-semibold text-purple-700 dark:text-purple-300 truncate flex items-center gap-1 mt-1 bg-purple-500/10 dark:bg-purple-950/40 px-2 py-0.5 rounded-lg border border-purple-500/20">
-                    <span className="text-[10px]">📋</span>
+                    <ClipboardList className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
                     <span className="truncate">{speaker.topic}</span>
                   </div>
                 )}

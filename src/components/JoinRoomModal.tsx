@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, LogIn, Key, User, ArrowLeft, Users, Check, RefreshCw } from 'lucide-react';
+import { X, LogIn, Key, User, ArrowLeft, Users, Check, RefreshCw, ClipboardList } from 'lucide-react';
 import { RoomSyncService, supabase } from '../lib/supabase';
 
 interface SpeakerItem {
@@ -260,8 +260,9 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                             <span className="font-extrabold text-sm truncate">{sp.name}</span>
                           </div>
                           {sp.topic && (
-                            <span className={`text-[11px] font-semibold block truncate mt-0.5 ${isSelected ? 'text-indigo-100' : 'text-purple-600 dark:text-purple-300'}`}>
-                              📋 {sp.topic}
+                            <span className={`text-[11px] font-semibold flex items-center gap-1 truncate mt-0.5 ${isSelected ? 'text-indigo-100' : 'text-purple-600 dark:text-purple-300'}`}>
+                              <ClipboardList className="w-3 h-3 shrink-0" />
+                              <span>{sp.topic}</span>
                             </span>
                           )}
                         </div>
