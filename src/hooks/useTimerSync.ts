@@ -230,7 +230,18 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
       syncService.broadcastRequestState();
     }
 
+    // Host heartbeat: broadcast state every 3s so joining members receive roster immediately
+    let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+    if (state.hostId === tabId) {
+      heartbeatTimer = setInterval(() => {
+        if (syncServiceRef.current && stateRef.current.hostId === tabId) {
+          syncServiceRef.current.broadcastState(stateRef.current);
+        }
+      }, 3000);
+    }
+
     return () => {
+      if (heartbeatTimer) clearInterval(heartbeatTimer);
       syncService.unsubscribe();
     };
   }, [state.roomCode, tabId, state.hostId]);

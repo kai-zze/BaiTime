@@ -32,9 +32,9 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
   const cleanRoomCode = roomCode.trim().toUpperCase();
   const isRoomCodeTyped = cleanRoomCode.length > 0;
 
-  // Listen live to host room state when member types 6-character room code
+  // Pre-connect WebSocket at 3+ characters for instant roster syncing on 6th char
   useEffect(() => {
-    if (!isOpen || cleanRoomCode.length < 6) {
+    if (!isOpen || cleanRoomCode.length < 3) {
       setLiveSpeakers([]);
       return;
     }
@@ -57,16 +57,22 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
       () => {}
     );
 
-    // Multi-stage retries to guarantee WebSocket delivery across mobile devices
-    syncService.broadcastRequestState();
-    const t1 = setTimeout(() => syncService.broadcastRequestState(), 300);
-    const t2 = setTimeout(() => syncService.broadcastRequestState(), 800);
-    const t3 = setTimeout(() => syncService.broadcastRequestState(), 1500);
+    // If room code reaches 6 characters, request state immediately and with fast retries
+    if (cleanRoomCode.length >= 6) {
+      syncService.broadcastRequestState();
+      const t1 = setTimeout(() => syncService.broadcastRequestState(), 100);
+      const t2 = setTimeout(() => syncService.broadcastRequestState(), 400);
+      const t3 = setTimeout(() => syncService.broadcastRequestState(), 1000);
+
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+        syncService.unsubscribe();
+      };
+    }
 
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
       syncService.unsubscribe();
     };
   }, [isOpen, cleanRoomCode]);
