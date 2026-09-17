@@ -251,6 +251,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="1"
                       max="180"
                       value={totalMinutes}
@@ -308,7 +309,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
                           <div className="flex items-center gap-1 bg-purple-500/10 border border-purple-500/30 rounded-lg px-2 py-1">
                             <input
                               type="number"
-                              step="0.5"
+                              step="any"
                               min="0.1"
                               max="180"
                               value={m.minutes}
