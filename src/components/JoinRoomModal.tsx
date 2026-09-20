@@ -22,6 +22,8 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
   onClose,
   onBackToWelcome,
   onJoinRoom,
+  currentRoomCode,
+  availableSpeakers,
 }) => {
   const [roomCode, setRoomCode] = useState('');
   const [selectedName, setSelectedName] = useState('');
@@ -36,11 +38,43 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
   // Directly fetch from Supabase DB when a complete 6-char room code is entered
   useEffect(() => {
     if (!isOpen || cleanRoomCode.length < 6) {
-      if (cleanRoomCode.length < 6) setLiveSpeakers([]);
+      setLiveSpeakers((prev) => (prev.length > 0 ? [] : prev));
       return;
     }
 
+    // 0. If this is already the active room loaded in parent state, use availableSpeakers immediately
+    if (
+      currentRoomCode &&
+      cleanRoomCode === currentRoomCode.toUpperCase() &&
+      availableSpeakers &&
+      availableSpeakers.length > 0
+    ) {
+      setLiveSpeakers(availableSpeakers.map((name) => ({ name })));
+      setIsLoading(false);
+      return;
+    }
+
+    // Check local storage cached state first for fast response
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(`baitime_room_state_${cleanRoomCode}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && Array.isArray(parsed.speakers) && parsed.speakers.length > 0) {
+            setLiveSpeakers(
+              parsed.speakers.map((s: any) => ({
+                name: s.name,
+                topic: s.topic,
+              }))
+            );
+          }
+        }
+      } catch {}
+    }
+
     setIsLoading(true);
+
+    let isSubscribed = true;
 
     // 1. Direct DB fetch (works across ANY device, any network, no WebSocket needed)
     const fetchFromDB = async () => {
@@ -51,6 +85,8 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
           .select('state')
           .eq('code', cleanRoomCode)
           .maybeSingle();
+
+        if (!isSubscribed) return false;
 
         if (!error && data && data.state && Array.isArray(data.state.speakers)) {
           const items: SpeakerItem[] = data.state.speakers.map((s: any) => ({
@@ -69,42 +105,59 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
       return false;
     };
 
-    // 2. WebSocket subscription for live updates after host changes state
-    const syncService = new RoomSyncService(cleanRoomCode);
-    syncService.subscribe(
-      (incomingState: any) => {
-        if (incomingState && Array.isArray(incomingState.speakers)) {
-          const items: SpeakerItem[] = incomingState.speakers.map((s: any) => ({
-            name: s.name,
-            topic: s.topic,
-          }));
-          if (items.length > 0) {
-            setLiveSpeakers(items);
+    // If cleanRoomCode matches currentRoomCode, we don't need a separate websocket sync service
+    let syncService: RoomSyncService | null = null;
+    if (!currentRoomCode || cleanRoomCode !== currentRoomCode.toUpperCase()) {
+      syncService = new RoomSyncService(cleanRoomCode);
+      syncService.subscribe(
+        (incomingState: any) => {
+          if (!isSubscribed) return;
+          if (incomingState && Array.isArray(incomingState.speakers)) {
+            const items: SpeakerItem[] = incomingState.speakers.map((s: any) => ({
+              name: s.name,
+              topic: s.topic,
+            }));
+            if (items.length > 0) {
+              setLiveSpeakers(items);
+              setIsLoading(false);
+            }
+          }
+        },
+        () => {},
+        () => {},
+        () => {}
+      );
+    }
+
+    fetchFromDB().then((found) => {
+      if (!isSubscribed) return;
+      if (!found && syncService) {
+        syncService.broadcastRequestState();
+        const t1 = setTimeout(() => isSubscribed && syncService?.broadcastRequestState(), 300);
+        const t2 = setTimeout(() => isSubscribed && syncService?.broadcastRequestState(), 800);
+        const t3 = setTimeout(() => {
+          if (isSubscribed) {
+            syncService?.broadcastRequestState();
             setIsLoading(false);
           }
-        }
-      },
-      () => {},
-      () => {},
-      () => {}
-    );
-
-    // Try DB first, then fall back to WebSocket request
-    fetchFromDB().then((found) => {
-      if (!found) {
-        // Retry WebSocket requests since DB had no data (host might not have saved yet)
-        syncService.broadcastRequestState();
-        const t1 = setTimeout(() => syncService.broadcastRequestState(), 300);
-        const t2 = setTimeout(() => syncService.broadcastRequestState(), 800);
-        const t3 = setTimeout(() => { syncService.broadcastRequestState(); setIsLoading(false); }, 2000);
-        return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+        }, 2000);
+        return () => {
+          clearTimeout(t1);
+          clearTimeout(t2);
+          clearTimeout(t3);
+        };
+      } else {
+        setIsLoading(false);
       }
     });
 
     return () => {
-      syncService.unsubscribe();
+      isSubscribed = false;
+      if (syncService) {
+        syncService.unsubscribe();
+      }
     };
-  }, [isOpen, cleanRoomCode]);
+  }, [isOpen, cleanRoomCode, currentRoomCode, availableSpeakers]);
 
   if (!isOpen) return null;
 
@@ -117,7 +170,17 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
       return liveSpeakers;
     }
 
-    // 2. Try cached room state from localStorage (if host created on same device/browser)
+    // 2. Current room props fallback
+    if (
+      currentRoomCode &&
+      cleanRoomCode === currentRoomCode.toUpperCase() &&
+      availableSpeakers &&
+      availableSpeakers.length > 0
+    ) {
+      return availableSpeakers.map((name) => ({ name }));
+    }
+
+    // 3. Try cached room state from localStorage (if host created on same device/browser)
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(`baitime_room_state_${cleanRoomCode}`);
       if (saved) {
@@ -260,10 +323,10 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                             <span className="font-extrabold text-sm truncate">{sp.name}</span>
                           </div>
                           {sp.topic && (
-                            <span className={`text-[11px] font-semibold flex items-center gap-1 truncate mt-0.5 ${isSelected ? 'text-indigo-100' : 'text-purple-600 dark:text-purple-300'}`}>
-                              <ClipboardList className="w-3 h-3 shrink-0" />
-                              <span>{sp.topic}</span>
-                            </span>
+                            <div className={`text-[11px] font-semibold flex items-start gap-1 mt-0.5 whitespace-pre-line break-words leading-snug ${isSelected ? 'text-indigo-100' : 'text-purple-600 dark:text-purple-300'}`}>
+                              <ClipboardList className="w-3 h-3 shrink-0 mt-0.5" />
+                              <span className="whitespace-pre-line break-words">{sp.topic}</span>
+                            </div>
                           )}
                         </div>
 

@@ -95,7 +95,7 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
   };
 
   // Master Timer State
-  const [state, setState] = useState<TimerState>({
+  const [state, setState] = useState<TimerState>(() => ({
     roomCode: initialRoomCode,
     roomName: "Capstone Mock Defense",
     totalDurationSeconds: 900, // 15 mins
@@ -105,8 +105,14 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
     speakers: DEFAULT_SPEAKERS,
     penaltyConfig: { enabled: true, pointsPerInterval: 1, intervalSeconds: 30 },
     lastUpdated: Date.now(),
-    hostId: tabId, // Default creator is this tab session
-  });
+    hostId: (() => {
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('room')) return 'remote_host';
+      }
+      return tabId;
+    })(),
+  }));
 
   // Keep stateRef in sync for handlers and async callbacks
   const stateRef = useRef<TimerState>(state);
@@ -144,8 +150,12 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
   const isHost = state.hostId === tabId;
 
   // Reload room-specific chat & clear active signal whenever state.roomCode changes
+  const prevRoomCodeRef = useRef(state.roomCode);
   useEffect(() => {
-    setActiveSignal(null);
+    if (prevRoomCodeRef.current !== state.roomCode) {
+      prevRoomCodeRef.current = state.roomCode;
+      setActiveSignal(null);
+    }
     if (typeof window !== 'undefined' && state.roomCode) {
       const saved = localStorage.getItem(`baitime_chat_${state.roomCode}`);
       if (saved) {
@@ -408,7 +418,7 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [state.status, state.hostId, userId, broadcastState]);
+  }, [state.status, state.hostId, tabId, broadcastState]);
 
   // Host Action Handlers
   const startTimer = () => {
@@ -598,6 +608,44 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
     });
   };
 
+  const updateRoomMembers = (
+    newMemberList: Array<{ id?: string; name: string; topic?: string; minutes: number }>,
+    updatedTotalMinutes?: number
+  ) => {
+    if (!isHost) return;
+
+    setState((prev) => {
+      const updatedSpeakers: Speaker[] = newMemberList.map((m, idx) => {
+        const existingSpeaker = prev.speakers.find((s) => s.id === m.id) || prev.speakers[idx];
+        const allocatedSeconds = Math.max(10, Math.round(m.minutes * 60));
+
+        return {
+          id: m.id || existingSpeaker?.id || `sp-${generateId()}`,
+          name: m.name.trim() || `Speaker ${idx + 1}`,
+          topic: m.topic !== undefined ? m.topic.trim() : (existingSpeaker?.topic || ''),
+          allocatedSeconds,
+          elapsedSeconds: existingSpeaker ? existingSpeaker.elapsedSeconds : 0,
+          status: existingSpeaker ? existingSpeaker.status : (idx === prev.currentSpeakerIndex ? 'active' : 'waiting'),
+        };
+      });
+
+      const totalAllocatedSecs = updatedSpeakers.reduce((acc, s) => acc + s.allocatedSeconds, 0);
+      const totalSecs = updatedTotalMinutes
+        ? Math.round(updatedTotalMinutes * 60)
+        : Math.max(totalAllocatedSecs, prev.totalDurationSeconds);
+
+      const nextState: TimerState = {
+        ...prev,
+        totalDurationSeconds: totalSecs,
+        speakers: updatedSpeakers,
+        lastUpdated: Date.now(),
+      };
+
+      broadcastState(nextState);
+      return nextState;
+    });
+  };
+
   const reenterRoomAsHost = (code: string) => {
     const upperCode = code.trim().toUpperCase();
     localStorage.setItem("baitime_last_created_room", upperCode);
@@ -714,8 +762,9 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
   };
 
   const sendStageSignal = (type: StageSignalType, messageText: string) => {
+    const signalId = `sig_${generateId()}`;
     const signal: StageSignal = {
-      id: generateId(),
+      id: signalId,
       type,
       senderName: userName,
       message: messageText,
@@ -728,9 +777,9 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
       syncServiceRef.current.broadcastStageSignal(signal);
     }
 
-    // Also add as chat record
+    // Also add as chat record with deterministic matching ID
     const chatMsg: ChatMessage = {
-      id: generateId(),
+      id: signalId,
       senderName: userName,
       text: `SIGNAL SENT: ${messageText}`,
       timestamp: Date.now(),
@@ -767,6 +816,9 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
   };
 
   const clearChatMessages = useCallback(() => {
+    // Only allow the user/host to clear all chats, not members
+    if (stateRef.current.hostId !== tabId) return;
+
     setChatMessages([]);
     if (typeof window !== 'undefined' && stateRef.current.roomCode) {
       localStorage.removeItem(`baitime_chat_${stateRef.current.roomCode}`);
@@ -774,17 +826,15 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
     if (syncServiceRef.current) {
       syncServiceRef.current.broadcastClearChat();
     }
-    if (stateRef.current.hostId === tabId) {
-      setState((prev) => {
-        const nextState = {
-          ...prev,
-          chatMessages: [],
-          lastUpdated: Date.now(),
-        };
-        broadcastState(nextState);
-        return nextState;
-      });
-    }
+    setState((prev) => {
+      const nextState = {
+        ...prev,
+        chatMessages: [],
+        lastUpdated: Date.now(),
+      };
+      broadcastState(nextState);
+      return nextState;
+    });
   }, [tabId, broadcastState]);
 
   return {
@@ -803,6 +853,7 @@ export function useTimerSync(initialRoomCode: string = "DEF15M") {
     selectSpeaker,
     addBonusTime,
     updateRoomConfiguration,
+    updateRoomMembers,
     reenterRoomAsHost,
     joinExistingRoom,
     sendChatMessage,

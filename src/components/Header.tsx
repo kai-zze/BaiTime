@@ -10,6 +10,8 @@ import {
   Sun,
   Moon,
   LogOut,
+  Share2,
+  Maximize2,
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { soundFx, subscribeMuteChange } from '../lib/audio';
@@ -27,6 +29,7 @@ interface HeaderProps {
   unreadChatCount: number;
   onToggleStageMode?: () => void;
   onOpenWelcome?: () => void;
+  onOpenEditMembers?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -37,9 +40,12 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleTheme,
   onOpenCreateModal,
   onOpenJoinModal,
+  onOpenShareModal,
   onToggleChat,
   unreadChatCount,
+  onToggleStageMode,
   onOpenWelcome,
+  onOpenEditMembers,
 }) => {
   const [copied, setCopied] = useState(false);
   const [isMuted, setIsMuted] = useState(() => soundFx.getIsMuted());
@@ -130,6 +136,30 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
+            {/* Fullscreen Stage Mode Button */}
+            {onToggleStageMode && (
+              <button
+                onClick={onToggleStageMode}
+                className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-extrabold text-indigo-700 dark:text-indigo-300 hover:bg-white dark:hover:bg-gray-700 transition-all active:scale-95 shrink-0"
+                title="Fullscreen Stage Mode"
+              >
+                <Maximize2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                <span className="hidden sm:inline">Stage</span>
+              </button>
+            )}
+
+            {/* Share Modal Button */}
+            {onOpenShareModal && (
+              <button
+                onClick={onOpenShareModal}
+                className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-extrabold text-emerald-700 dark:text-emerald-300 hover:bg-white dark:hover:bg-gray-700 transition-all active:scale-95 shrink-0"
+                title="Share Room Link & QR Code"
+              >
+                <Share2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span className="hidden sm:inline">Share</span>
+              </button>
+            )}
+
             {/* Chat Button */}
             <button
               onClick={onToggleChat}
@@ -173,9 +203,9 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Primary CTA Button Placed Right Beside Toolbar Pill */}
           {isHost ? (
             <button
-              onClick={onOpenCreateModal}
+              onClick={onOpenEditMembers || onOpenCreateModal}
               className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-2xl text-xs font-black bg-[#FF5B00] hover:bg-[#E05000] text-white border border-[#FF5B00] transition-all active:scale-95 shadow-md whitespace-nowrap shrink-0 cursor-pointer"
-              title="Edit Room Configuration & Speakers"
+              title="Edit Member Names, Topics & Allocations (Live Sync)"
             >
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Edit Members</span>

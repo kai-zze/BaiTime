@@ -107,46 +107,59 @@ export class RoomSyncService {
         }
       });
 
-      this.channel = supabase.channel(`room:${this.roomCode}`, {
-        config: { broadcast: { self: true } },
-      });
+      try {
+        // Clean up any existing channel with the same topic to avoid "callbacks after subscribe" error
+        const targetTopic = `realtime:room:${this.roomCode}`;
+        const existingChannels = supabase.getChannels();
+        for (const ch of existingChannels) {
+          if (ch.topic === targetTopic || ch.topic === `room:${this.roomCode}`) {
+            supabase.removeChannel(ch);
+          }
+        }
 
-      this.channel
-        .on('broadcast', { event: 'timer-state' }, ({ payload }) => {
-          onStateUpdate(payload);
-        })
-        .on('broadcast', { event: 'chat-message' }, ({ payload }) => {
-          onChatMessage(payload);
-        })
-        .on('broadcast', { event: 'stage-signal' }, ({ payload }) => {
-          onStageSignal(payload);
-        })
-        .on('broadcast', { event: 'clear-chat' }, () => {
-          if (onClearChat) onClearChat();
-        })
-        .on('broadcast', { event: 'request-state' }, () => {
-          if (onRequestState) onRequestState();
-        })
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'rooms', filter: `code=eq.${this.roomCode}` },
-          (payload: any) => {
-            if (payload.new && payload.new.state) {
-              onStateUpdate(payload.new.state);
-            }
-          }
-        )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED' && this.channel) {
-            this.isSubscribed = true;
-            this.flushPendingBroadcasts();
-            this.channel.send({
-              type: 'broadcast',
-              event: 'request-state',
-              payload: {},
-            });
-          }
+        this.channel = supabase.channel(`room:${this.roomCode}`, {
+          config: { broadcast: { self: true } },
         });
+
+        this.channel
+          .on('broadcast', { event: 'timer-state' }, ({ payload }) => {
+            onStateUpdate(payload);
+          })
+          .on('broadcast', { event: 'chat-message' }, ({ payload }) => {
+            onChatMessage(payload);
+          })
+          .on('broadcast', { event: 'stage-signal' }, ({ payload }) => {
+            onStageSignal(payload);
+          })
+          .on('broadcast', { event: 'clear-chat' }, () => {
+            if (onClearChat) onClearChat();
+          })
+          .on('broadcast', { event: 'request-state' }, () => {
+            if (onRequestState) onRequestState();
+          })
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'rooms', filter: `code=eq.${this.roomCode}` },
+            (payload: any) => {
+              if (payload.new && payload.new.state) {
+                onStateUpdate(payload.new.state);
+              }
+            }
+          )
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED' && this.channel) {
+              this.isSubscribed = true;
+              this.flushPendingBroadcasts();
+              this.channel.send({
+                type: 'broadcast',
+                event: 'request-state',
+                payload: {},
+              });
+            }
+          });
+      } catch (err) {
+        console.warn(`[RoomSyncService] Realtime channel subscription warning for room ${this.roomCode}:`, err);
+      }
     }
 
     // Listen to local BroadcastChannel as fallback
@@ -225,10 +238,21 @@ export class RoomSyncService {
 
   public unsubscribe() {
     if (this.channel && supabase) {
-      supabase.removeChannel(this.channel);
+      try {
+        supabase.removeChannel(this.channel);
+      } catch {
+        // Ignore cleanup errors
+      }
+      this.channel = null;
+      this.isSubscribed = false;
     }
     if (this.localBroadcastChannel) {
-      this.localBroadcastChannel.close();
+      try {
+        this.localBroadcastChannel.close();
+      } catch {
+        // Ignore cleanup errors
+      }
+      this.localBroadcastChannel = null;
     }
   }
 }

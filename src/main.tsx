@@ -31,9 +31,63 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     }
   }
 
+  private handleRecover = () => {
+    try {
+      sessionStorage.removeItem('baitime_last_auto_reload');
+    } catch {
+      // Storage fallback
+    }
+    window.location.reload();
+  };
+
   public render() {
     if (this.state.hasError) {
-      return null;
+      return (
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#0B132B',
+          color: '#ffffff',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          padding: '24px',
+          textAlign: 'center',
+        }}>
+          <div style={{
+            backgroundColor: '#111C38',
+            padding: '36px',
+            borderRadius: '24px',
+            border: '1px solid rgba(255, 91, 0, 0.3)',
+            maxWidth: '480px',
+            width: '100%',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          }}>
+            <h1 style={{ fontSize: '22px', fontWeight: 900, marginBottom: '12px', color: '#FF5B00' }}>
+              BaiTime Defense Timer
+            </h1>
+            <p style={{ fontSize: '14px', color: '#94A3B8', marginBottom: '24px', lineHeight: 1.5 }}>
+              A temporary issue occurred while loading this session. Tap below to refresh and continue.
+            </p>
+            <button
+              onClick={this.handleRecover}
+              style={{
+                backgroundColor: '#FF5B00',
+                color: '#ffffff',
+                border: 'none',
+                padding: '12px 28px',
+                borderRadius: '12px',
+                fontSize: '14px',
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              Refresh Session
+            </button>
+          </div>
+        </div>
+      );
     }
 
     return this.props.children;

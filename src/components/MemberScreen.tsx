@@ -118,6 +118,10 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
     ? currentSpeaker.name.trim().toLowerCase() === userName.trim().toLowerCase()
     : false;
 
+  const mySpeaker = speakers.find(
+    (s) => s.name.trim().toLowerCase() === userName.trim().toLowerCase()
+  );
+
   // Sends PPT slide change signal to host WITHOUT advancing reporter timer
   const handleNextSlide = () => {
     if (!isCurrentPresenter) {
@@ -133,7 +137,7 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
       triggerToast(`Locked: Only ${currentSpeaker?.name || 'Active Presenter'} can change slides`);
       return;
     }
-    onSendSignal('next_slide', `${userName} requested Previous Slide`);
+    onSendSignal('prev_slide', `${userName} requested Previous Slide`);
     triggerToast(`Previous Slide Signal Sent to Host!`);
   };
 
@@ -267,9 +271,27 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
                   {currentSpeaker.name}
                 </h2>
                 {currentSpeaker.topic && (
-                  <div className="mt-2.5 inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-indigo-500/10 dark:bg-indigo-950/60 border border-indigo-500/30 text-indigo-600 dark:text-indigo-300 text-xs sm:text-sm font-extrabold shadow-xs">
-                    <ClipboardList className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                    <span>Reporting Topic: <strong>{currentSpeaker.topic}</strong></span>
+                  <div className="mt-2.5 inline-flex items-start gap-2 px-3.5 py-2.5 rounded-2xl bg-indigo-500/10 dark:bg-indigo-950/60 border border-indigo-500/30 text-xs sm:text-sm shadow-xs text-left max-w-full">
+                    <ClipboardList className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 block mb-0.5">
+                        Reporting Topic
+                      </span>
+                      <div className="flex flex-col space-y-0.5">
+                        {currentSpeaker.topic.replace(/\\n/g, '\n').split('\n').map((line, lIdx) => (
+                          <div
+                            key={lIdx}
+                            className={`break-words leading-snug ${
+                              lIdx === 0
+                                ? 'font-black text-gray-900 dark:text-white text-xs sm:text-sm'
+                                : 'font-bold text-indigo-700 dark:text-indigo-300 text-[11px] sm:text-xs'
+                            }`}
+                          >
+                            {line}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -351,6 +373,30 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
                   ? 'You are on stage! Tap buttons below to signal slide changes or mental block to the host:'
                   : `Only the active presenter (${currentSpeaker?.name || 'Presenter'}) can control slides or signals.`}
               </p>
+
+              {/* Teammate Assigned Topic (2-line formatted) */}
+              {mySpeaker && mySpeaker.topic && (
+                <div className="mb-3 p-2.5 rounded-xl bg-purple-500/10 dark:bg-purple-950/40 border border-purple-500/30 text-xs">
+                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-purple-700 dark:text-purple-300 mb-1">
+                    <ClipboardList className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                    <span>Your Assigned Reporting Topic ({mySpeaker.name}):</span>
+                  </div>
+                  <div className="flex flex-col space-y-0.5 pl-5">
+                    {mySpeaker.topic.replace(/\\n/g, '\n').split('\n').map((line, lIdx) => (
+                      <div
+                        key={lIdx}
+                        className={`break-words leading-snug ${
+                          lIdx === 0
+                            ? 'font-black text-purple-900 dark:text-purple-100 text-xs'
+                            : 'font-semibold text-purple-700 dark:text-purple-300 text-[11px]'
+                        }`}
+                      >
+                        {line}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Primary Big Touch Buttons for Slide Change */}
@@ -515,10 +561,23 @@ export const MemberScreen: React.FC<MemberScreenProps> = ({
                           {sp.name}
                         </span>
                         {sp.topic && (
-                          <span className="text-[11px] font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-1 truncate mt-0.5">
-                            <ClipboardList className="w-3 h-3 text-purple-500 shrink-0" />
-                            <span>{sp.topic}</span>
-                          </span>
+                          <div className="text-[11px] font-semibold text-purple-700 dark:text-purple-300 flex items-start gap-1 mt-1">
+                            <ClipboardList className="w-3 h-3 text-purple-500 shrink-0 mt-0.5" />
+                            <div className="min-w-0 flex flex-col space-y-0.5">
+                              {sp.topic.replace(/\\n/g, '\n').split('\n').map((line, lIdx) => (
+                                <span
+                                  key={lIdx}
+                                  className={`break-words leading-snug block ${
+                                    lIdx === 0
+                                      ? 'font-bold text-gray-900 dark:text-white'
+                                      : 'font-semibold text-purple-700 dark:text-purple-300 opacity-90'
+                                  }`}
+                                >
+                                  {line}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>

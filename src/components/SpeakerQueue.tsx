@@ -1,5 +1,5 @@
 import type { Speaker } from '../types/timer';
-import { CheckCircle2, Mic, Clock, ArrowRight, CheckCheck, ClipboardList } from 'lucide-react';
+import { CheckCircle2, Mic, Clock, ArrowRight, CheckCheck, ClipboardList, Edit2 } from 'lucide-react';
 
 interface SpeakerQueueProps {
   speakers: Speaker[];
@@ -7,6 +7,7 @@ interface SpeakerQueueProps {
   isHost: boolean;
   onSelectSpeaker?: (index: number) => void;
   onFinishEarly?: () => void;
+  onEditMembers?: () => void;
 }
 
 export const SpeakerQueue: React.FC<SpeakerQueueProps> = ({
@@ -15,6 +16,7 @@ export const SpeakerQueue: React.FC<SpeakerQueueProps> = ({
   isHost,
   onSelectSpeaker,
   onFinishEarly,
+  onEditMembers,
 }) => {
   const formatSecs = (secs: number) => {
     const mins = Math.floor(secs / 60);
@@ -31,9 +33,22 @@ export const SpeakerQueue: React.FC<SpeakerQueueProps> = ({
             Speaker Queue ({speakers.length} Members)
           </h2>
         </div>
-        <span className="text-[10px] font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
-          Sub-timer per slot
-        </span>
+        <div className="flex items-center gap-2">
+          {isHost && onEditMembers && (
+            <button
+              type="button"
+              onClick={onEditMembers}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 transition-all cursor-pointer shadow-xs active:scale-95"
+              title="Edit Member Names, Topics & Allocations"
+            >
+              <Edit2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+              <span>Edit Members</span>
+            </button>
+          )}
+          <span className="text-[10px] font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+            Sub-timer per slot
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -96,18 +111,44 @@ export const SpeakerQueue: React.FC<SpeakerQueueProps> = ({
             >
               <div>
                 <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
-                  <span className="text-[10px] font-mono font-bold text-gray-500 dark:text-gray-400">
-                    SLOT {index + 1}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-mono font-bold text-gray-500 dark:text-gray-400">
+                      SLOT {index + 1}
+                    </span>
+                    {isHost && onEditMembers && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditMembers();
+                        }}
+                        className="p-1 rounded-md text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-colors cursor-pointer"
+                        title={`Edit ${speaker.name}'s name, topic, or allocated time`}
+                      >
+                        <Edit2 className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
                   {statusBadge}
                 </div>
                 <h3 className={`font-black text-sm truncate mb-0.5 ${nameCls}`}>
                   {speaker.name}
                 </h3>
                 {speaker.topic && (
-                  <div className="text-xs font-semibold text-purple-700 dark:text-purple-300 flex items-start gap-1.5 mt-1 bg-purple-500/10 dark:bg-purple-950/40 px-2.5 py-1.5 rounded-lg border border-purple-500/20 whitespace-pre-line break-words">
+                  <div className="text-xs font-semibold text-purple-700 dark:text-purple-300 flex items-start gap-1.5 mt-1 bg-purple-500/10 dark:bg-purple-950/40 px-2.5 py-1.5 rounded-lg border border-purple-500/20">
                     <ClipboardList className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
-                    <span className="whitespace-pre-line break-words leading-relaxed">{speaker.topic}</span>
+                    <div className="min-w-0 flex flex-col space-y-0.5">
+                      {speaker.topic.replace(/\\n/g, '\n').split('\n').map((line, lIdx) => (
+                        <span
+                          key={lIdx}
+                          className={`break-words leading-snug block ${
+                            lIdx === 0 ? 'font-bold' : 'font-normal text-[11px] opacity-90'
+                          }`}
+                        >
+                          {line}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

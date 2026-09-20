@@ -216,10 +216,21 @@ export const MasterTimer: React.FC<MasterTimerProps> = ({ state, activeSignal, o
               <span>{currentSpeaker.name}</span>
             </h3>
             {currentSpeaker.topic && (
-              <span className="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-300 mt-1.5 flex items-start gap-1.5 bg-indigo-500/10 px-3.5 py-1.5 rounded-2xl border border-indigo-500/30 whitespace-pre-line break-words max-w-xl text-center">
+              <div className="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-300 mt-1.5 flex items-start gap-1.5 bg-indigo-500/10 px-3.5 py-1.5 rounded-2xl border border-indigo-500/30 max-w-xl text-left sm:text-center">
                 <ClipboardList className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
-                <span className="whitespace-pre-line break-words leading-relaxed">Topic: {currentSpeaker.topic}</span>
-              </span>
+                <div className="flex flex-col space-y-0.5 min-w-0">
+                  {currentSpeaker.topic.replace(/\\n/g, '\n').split('\n').map((line, lIdx) => (
+                    <span
+                      key={lIdx}
+                      className={`break-words leading-snug block ${
+                        lIdx === 0 ? 'font-black' : 'font-semibold text-[11px] sm:text-xs opacity-90'
+                      }`}
+                    >
+                      {line}
+                    </span>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 

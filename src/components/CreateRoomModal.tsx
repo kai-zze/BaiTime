@@ -387,13 +387,18 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
                       />
 
                       {/* Topic & Description (Multi-line enabled) */}
-                      <textarea
-                        rows={2}
-                        value={m.topic}
-                        onChange={(e) => handleChange(i, 'topic', e.target.value)}
-                        placeholder="Presentation topic or description (Enter for new lines)"
-                        className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-purple-500/60 whitespace-pre-wrap resize-y"
-                      />
+                      <div>
+                        <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-0.5">
+                          Topic / Description (Press Enter for 2nd line)
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={m.topic}
+                          onChange={(e) => handleChange(i, 'topic', e.target.value)}
+                          placeholder="Presentation topic or description (e.g. 2 lines — press Enter for line 2)"
+                          className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-purple-500/60 whitespace-pre-wrap resize-y"
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>

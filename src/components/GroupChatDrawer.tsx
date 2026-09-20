@@ -27,6 +27,11 @@ export const GroupChatDrawer: React.FC<GroupChatDrawerProps> = ({
   const [inputText, setInputText] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(userName);
+  const [prevUserName, setPrevUserName] = useState(userName);
+  if (prevUserName !== userName) {
+    setPrevUserName(userName);
+    setTempName(userName);
+  }
 
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -36,10 +41,6 @@ export const GroupChatDrawer: React.FC<GroupChatDrawerProps> = ({
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages.length, isOpen]);
-
-  useEffect(() => {
-    setTempName(userName);
-  }, [userName]);
 
   if (!isOpen) return null;
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { useTimerSync, generateRoomCode } from './hooks/useTimerSync';
 import { Header } from './components/Header';
@@ -12,6 +12,7 @@ import { ShareModal } from './components/ShareModal';
 import { StageMode } from './components/StageMode';
 import { MemberScreen } from './components/MemberScreen';
 import { WelcomeModal } from './components/WelcomeModal';
+import { EditMembersModal } from './components/EditMembersModal';
 import { Info } from 'lucide-react';
 
 const STORAGE_KEY_THEME = 'baitime_theme_mode';
@@ -71,6 +72,7 @@ export function App() {
     selectSpeaker,
     addBonusTime,
     updateRoomConfiguration,
+    updateRoomMembers,
     reenterRoomAsHost,
     joinExistingRoom,
     sendChatMessage,
@@ -81,6 +83,7 @@ export function App() {
   // Modals state
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(!hasRoomParam);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditMembersOpen, setIsEditMembersOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -89,15 +92,21 @@ export function App() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Track unread chat messages when drawer is closed
+  const prevMsgCountRef = useRef(chatMessages.length);
   useEffect(() => {
-    if (!isChatOpen && chatMessages.length > 0) {
-      setUnreadCount((prev) => prev + 1);
+    if (!isChatOpen && chatMessages.length > prevMsgCountRef.current) {
+      const added = chatMessages.length - prevMsgCountRef.current;
+      setUnreadCount((prev) => prev + added);
     }
+    prevMsgCountRef.current = chatMessages.length;
   }, [chatMessages.length, isChatOpen]);
 
   const handleToggleChat = () => {
-    setIsChatOpen((prev) => !prev);
-    if (!isChatOpen) setUnreadCount(0);
+    setIsChatOpen((prev) => {
+      const next = !prev;
+      if (next) setUnreadCount(0);
+      return next;
+    });
   };
 
   // Celebrate with confetti when presentation finishes
@@ -120,6 +129,7 @@ export function App() {
         target.tagName === 'TEXTAREA' ||
         target.isContentEditable ||
         isCreateOpen ||
+        isEditMembersOpen ||
         isJoinOpen ||
         isWelcomeOpen
       ) {
@@ -152,7 +162,7 @@ export function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isHost, state.status, startTimer, pauseTimer, nextSpeaker, prevSpeaker, addBonusTime, isCreateOpen, isJoinOpen, isWelcomeOpen]);
+  }, [isHost, state.status, startTimer, pauseTimer, nextSpeaker, prevSpeaker, addBonusTime, isCreateOpen, isEditMembersOpen, isJoinOpen, isWelcomeOpen]);
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0B132B] text-gray-900 dark:text-gray-100 flex flex-col font-sans selection:bg-[#FF5B00] selection:text-white pb-12 transition-colors duration-200">
@@ -164,6 +174,7 @@ export function App() {
         isDark={isDark}
         onToggleTheme={handleToggleTheme}
         onOpenCreateModal={() => setIsCreateOpen(true)}
+        onOpenEditMembers={() => setIsEditMembersOpen(true)}
         onOpenJoinModal={() => setIsJoinOpen(true)}
         onOpenShareModal={() => setIsShareOpen(true)}
         onToggleChat={handleToggleChat}
@@ -225,6 +236,7 @@ export function App() {
             }
           }}
           onFinishEarly={isHost ? nextSpeaker : undefined}
+          onEditMembers={() => setIsEditMembersOpen(true)}
         />
       </main>
 
@@ -316,6 +328,15 @@ export function App() {
         }}
         currentRoomCode={state.roomCode}
         currentHostName={userName}
+      />
+
+      <EditMembersModal
+        isOpen={isEditMembersOpen}
+        onClose={() => setIsEditMembersOpen(false)}
+        roomCode={state.roomCode}
+        speakers={state.speakers}
+        totalDurationSeconds={state.totalDurationSeconds}
+        onSaveMembers={updateRoomMembers}
       />
 
       <JoinRoomModal
